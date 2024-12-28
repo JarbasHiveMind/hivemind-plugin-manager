@@ -8,8 +8,6 @@ from ovos_utils.fakebus import FakeBus
 from ovos_utils.log import LOG
 
 from hivemind_bus_client.identity import NodeIdentity
-from hivemind_core.database import ClientDatabase
-from hivemind_core.protocol import HiveMindClientConnection
 
 
 @dataclass
@@ -23,11 +21,11 @@ class _SubProtocol:
         return self.hm_protocol.identity
 
     @property
-    def database(self) -> ClientDatabase:
+    def database(self) -> 'ClientDatabase':
         return self.hm_protocol.db
 
     @property
-    def clients(self) -> Dict[str, HiveMindClientConnection]:
+    def clients(self) -> Dict[str, 'HiveMindClientConnection']:
         return self.hm_protocol.clients
 
 
@@ -60,36 +58,36 @@ class BinaryDataHandlerProtocol(_SubProtocol):
     def handle_microphone_input(self, bin_data: bytes,
                                 sample_rate: int,
                                 sample_width: int,
-                                client: HiveMindClientConnection):
+                                client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary audio input: {len(bin_data)} bytes at sample_rate: {sample_rate}")
 
     def handle_stt_transcribe_request(self, bin_data: bytes,
                                       sample_rate: int,
                                       sample_width: int,
                                       lang: str,
-                                      client: HiveMindClientConnection):
+                                      client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary STT input: {len(bin_data)} bytes")
 
     def handle_stt_handle_request(self, bin_data: bytes,
                                   sample_rate: int,
                                   sample_width: int,
                                   lang: str,
-                                  client: HiveMindClientConnection):
+                                  client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary STT input: {len(bin_data)} bytes")
 
     def handle_numpy_image(self, bin_data: bytes,
                            camera_id: str,
-                           client: HiveMindClientConnection):
+                           client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary image: {len(bin_data)} bytes")
 
     def handle_receive_tts(self, bin_data: bytes,
                            utterance: str,
                            lang: str,
                            file_name: str,
-                           client: HiveMindClientConnection):
+                           client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary TTS audio: {utterance} with {len(bin_data)} bytes")
 
     def handle_receive_file(self, bin_data: bytes,
                             file_name: str,
-                            client: HiveMindClientConnection):
+                            client: 'HiveMindClientConnection'):
         LOG.warning(f"Ignoring received binary file: {file_name} with {len(bin_data)} bytes")
