@@ -48,7 +48,7 @@ setup(
     url='https://github.com/JarbasHiveMind/hivemind-plugin-manager',
     license='Apache-2.0',
     author='jarbasAi',
-    install_requires=required("requirements.txt"),
+    #install_requires=required("requirements.txt"),
     author_email='jarbasai@mailfence.com',
     description='plugin manager for hivemind-core'
 )
