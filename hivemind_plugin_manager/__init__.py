@@ -14,75 +14,6 @@ class HiveMindPluginTypes(str, enum.Enum):
     BINARY_PROTOCOL = "hivemind.binary.protocol"
 
 
-def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
-    """
-    Finds all plugins matching specific entrypoint type.
-
-    Arguments:
-        plug_type (str): plugin entrypoint string to retrieve
-
-    Returns:
-        dict mapping plugin names to plugin entrypoints
-    """
-    entrypoints = {}
-    if not plug_type:
-        plugs = list(HiveMindPluginTypes)
-    elif isinstance(plug_type, str):
-        plugs = [plug_type]
-    else:
-        plugs = plug_type
-    for plug in plugs:
-        for entry_point in _iter_entrypoints(plug):
-            try:
-                entrypoints[entry_point.name] = entry_point.load()
-                if entry_point.name not in entrypoints:
-                    LOG.debug(f"Loaded plugin entry point {entry_point.name}")
-            except Exception as e:
-                if entry_point not in find_plugins._errored:
-                    find_plugins._errored.append(entry_point)
-                    # NOTE: this runs in a loop inside skills manager, this would endlessly spam logs
-                    LOG.error(f"Failed to load plugin entry point {entry_point}: "
-                              f"{e}")
-    return entrypoints
-
-
-find_plugins._errored = []
-
-
-def _iter_entrypoints(plug_type: Optional[str]):
-    """
-    Return an iterator containing all entrypoints of the requested type
-    @param plug_type: entrypoint name to load
-    @return: iterator of all entrypoints
-    """
-    try:
-        from importlib_metadata import entry_points
-        for entry_point in entry_points(group=plug_type):
-            yield entry_point
-    except ImportError:
-        import pkg_resources
-        for entry_point in pkg_resources.iter_entry_points(plug_type):
-            yield entry_point
-
-
-def load_plugin(plug_name: str, plug_type: Optional[HiveMindPluginTypes] = None):
-    """Load a specific plugin from a specific plugin type.
-
-    Arguments:
-        plug_type: (str) plugin type name. Ex. "hivemind.agent.protocol".
-        plug_name: (str) specific plugin name (else consider all plugin types)
-
-    Returns:
-        Loaded plugin Object or None if no matching object was found.
-    """
-    plugins = find_plugins(plug_type)
-    if plug_name in plugins:
-        return plugins[plug_name]
-    plug_type = plug_type or "all plugin types"
-    LOG.warning(f'Could not find the plugin {plug_type}.{plug_name}')
-    return None
-
-
 class DatabaseFactory:
 
     @classmethod
@@ -144,6 +75,56 @@ class BinaryDataHandlerProtocolFactory:
                                     hm_protocol=hm_protocol,
                                     agent_protocol=agent_protocol)
 
+
+def _iter_entrypoints(plug_type: Optional[str]):
+    """
+    Return an iterator containing all entrypoints of the requested type
+    @param plug_type: entrypoint name to load
+    @return: iterator of all entrypoints
+    """
+    try:
+        from importlib_metadata import entry_points
+        for entry_point in entry_points(group=plug_type):
+            yield entry_point
+    except ImportError:
+        import pkg_resources
+        for entry_point in pkg_resources.iter_entry_points(plug_type):
+            yield entry_point
+
+
+def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
+    """
+    Finds all plugins matching specific entrypoint type.
+
+    Arguments:
+        plug_type (str): plugin entrypoint string to retrieve
+
+    Returns:
+        dict mapping plugin names to plugin entrypoints
+    """
+    entrypoints = {}
+    if not plug_type:
+        plugs = list(HiveMindPluginTypes)
+    elif isinstance(plug_type, str):
+        plugs = [plug_type]
+    else:
+        plugs = plug_type
+    for plug in plugs:
+        for entry_point in _iter_entrypoints(plug):
+            try:
+                entrypoints[entry_point.name] = entry_point.load()
+                if entry_point.name not in entrypoints:
+                    LOG.debug(f"Loaded plugin entry point {entry_point.name}")
+            except Exception as e:
+                if entry_point not in find_plugins._errored:
+                    find_plugins._errored.append(entry_point)
+                    # NOTE: this runs in a loop inside skills manager, this would endlessly spam logs
+                    LOG.error(f"Failed to load plugin entry point {entry_point}: "
+                              f"{e}")
+    return entrypoints
+
+
+find_plugins._errored = []
 
 if __name__ == "__main__":
     print(find_plugins(HiveMindPluginTypes.DATABASE))
