@@ -1,12 +1,12 @@
 # Changelog
 
-## [0.1.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.1.0a1) (2024-12-29)
+## [0.2.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.2.0a1) (2024-12-29)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.2...0.1.0a1)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.1.0...0.2.0a1)
 
 **Merged pull requests:**
 
-- feat: add plugin factory classes [\#3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/3) ([JarbasAl](https://github.com/JarbasAl))
+- feat: add client callbacks [\#5](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/5) ([JarbasAl](https://github.com/JarbasAl))
 
 
 
