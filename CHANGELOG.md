@@ -1,12 +1,12 @@
 # Changelog
 
-## [0.0.2a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.0.2a1) (2024-12-28)
+## [0.1.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.1.0a1) (2024-12-29)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.1...0.0.2a1)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.2...0.1.0a1)
 
 **Merged pull requests:**
 
-- fix: circular imports because of typing [\#1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/1) ([JarbasAl](https://github.com/JarbasAl))
+- feat: add plugin factory classes [\#3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/3) ([JarbasAl](https://github.com/JarbasAl))
 
 
 

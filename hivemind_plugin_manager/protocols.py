@@ -18,14 +18,20 @@ class _SubProtocol:
 
     @property
     def identity(self) -> NodeIdentity:
+        if not self.hm_protocol:
+            return NodeIdentity()
         return self.hm_protocol.identity
 
     @property
-    def database(self) -> 'ClientDatabase':
+    def database(self) -> Optional['ClientDatabase']:
+        if not self.hm_protocol:
+            return None
         return self.hm_protocol.db
 
     @property
     def clients(self) -> Dict[str, 'HiveMindClientConnection']:
+        if not self.hm_protocol:
+            return {}
         return self.hm_protocol.clients
 
 
@@ -34,7 +40,8 @@ class AgentProtocol(_SubProtocol):
     """protocol to handle Message objects, the payload of HiveMessage objects"""
     bus: Union[FakeBus, MessageBusClient] = dataclasses.field(default_factory=FakeBus)
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    hm_protocol: Optional['HiveMindListenerProtocol'] = None
+    hm_protocol: Optional['HiveMindListenerProtocol'] = None # usually AgentProtocol is passed as kwarg to hm_protocol
+                                                             # and only then assigned in hm_protocol.__post_init__
 
 
 @dataclass
@@ -42,6 +49,12 @@ class NetworkProtocol(_SubProtocol):
     """protocol to transport HiveMessage objects around"""
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None
+
+    @property
+    def agent_protocol(self) -> Optional['AgentProtocol']:
+        if not self.hm_protocol:
+            return None
+        return self.hm_protocol.agent_protocol
 
     @abc.abstractmethod
     def run(self):
@@ -52,8 +65,14 @@ class NetworkProtocol(_SubProtocol):
 class BinaryDataHandlerProtocol(_SubProtocol):
     """protocol to handle Binary data HiveMessage objects"""
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    hm_protocol: Optional['HiveMindListenerProtocol'] = None
-    agent_protocol: Optional[AgentProtocol] = None
+    hm_protocol: Optional['HiveMindListenerProtocol'] = None # usually BinaryDataHandlerProtocol is passed as kwarg to hm_protocol
+                                                             # and only then assigned in hm_protocol.__post_init__
+    agent_protocol: Optional['AgentProtocol'] = None
+
+    def __post_init__(self):
+        # NOTE: the most common scenario is having self.agent_protocol but not having self.hm_protocol yet
+        if not self.agent_protocol and self.hm_protocol:
+            self.agent_protocol = self.hm_protocol.agent_protocol
 
     def handle_microphone_input(self, bin_data: bytes,
                                 sample_rate: int,

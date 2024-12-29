@@ -154,6 +154,7 @@ class Client:
         return self.serialize()
 
 
+@dataclass
 class AbstractDB(abc.ABC):
     """
     Abstract base class for all database implementations.
@@ -161,6 +162,9 @@ class AbstractDB(abc.ABC):
     All database implementations should derive from this class and implement
     the abstract methods.
     """
+    name: str = "clients"
+    subfolder: str = "hivemind-core"
+    password: Optional[str] = None
 
     @abc.abstractmethod
     def add_item(self, client: Client) -> bool:
@@ -173,7 +177,6 @@ class AbstractDB(abc.ABC):
         Returns:
             True if the addition was successful, False otherwise.
         """
-        pass
 
     def delete_item(self, client: Client) -> bool:
         """
@@ -227,7 +230,6 @@ class AbstractDB(abc.ABC):
         Returns:
             A list of clients that match the search criteria.
         """
-        pass
 
     @abc.abstractmethod
     def __len__(self) -> int:
@@ -237,7 +239,6 @@ class AbstractDB(abc.ABC):
         Returns:
             The number of items in the database.
         """
-        return 0
 
     @abc.abstractmethod
     def __iter__(self) -> Iterable['Client']:
@@ -247,7 +248,6 @@ class AbstractDB(abc.ABC):
         Returns:
             An iterator over the clients in the database.
         """
-        pass
 
     def sync(self):
         """update db from disk if needed"""
@@ -262,3 +262,57 @@ class AbstractDB(abc.ABC):
         """
         return True
 
+
+@dataclass
+class AbstractRemoteDB(AbstractDB):
+    """
+    Abstract base class for remote database implementations.
+    """
+    host: str = "127.0.0.1"
+    port: Optional[int] = None
+    name: str = "clients"
+    subfolder: str = "hivemind-core"
+    password: Optional[str] = None
+
+    @abc.abstractmethod
+    def add_item(self, client: Client) -> bool:
+        """
+        Add a client to the database.
+
+        Args:
+            client: The client to be added.
+
+        Returns:
+            True if the addition was successful, False otherwise.
+        """
+
+    @abc.abstractmethod
+    def search_by_value(self, key: str, val: Union[str, bool, int, float]) -> List[Client]:
+        """
+        Search for clients by a specific key-value pair.
+
+        Args:
+            key: The key to search by.
+            val: The value to search for.
+
+        Returns:
+            A list of clients that match the search criteria.
+        """
+
+    @abc.abstractmethod
+    def __len__(self) -> int:
+        """
+        Get the number of items in the database.
+
+        Returns:
+            The number of items in the database.
+        """
+
+    @abc.abstractmethod
+    def __iter__(self) -> Iterable['Client']:
+        """
+        Iterate over all clients in the database.
+
+        Returns:
+            An iterator over the clients in the database.
+        """
