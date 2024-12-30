@@ -1,12 +1,12 @@
 # Changelog
 
-## [0.3.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.3.0a1) (2024-12-29)
+## [0.4.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.0a1) (2024-12-30)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.2.0...0.3.0a1)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.3.0...0.4.0a1)
 
 **Merged pull requests:**
 
-- feat: get\_class factory methods [\#7](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/7) ([JarbasAl](https://github.com/JarbasAl))
+- feat:tui [\#9](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/9) ([JarbasAl](https://github.com/JarbasAl))
 
 
 
