@@ -37,17 +37,24 @@ class Client:
     api_key: str
     name: str = ""
     description: str = ""
-    is_admin: bool = False
+    is_admin: bool = False  # allowed to send ADMIN type messages
     last_seen: float = -1
+
     intent_blacklist: List[str] = field(default_factory=list)
     skill_blacklist: List[str] = field(default_factory=list)
     message_blacklist: List[str] = field(default_factory=list)
     allowed_types: List[str] = field(default_factory=list)
+
     crypto_key: Optional[str] = None
     password: Optional[str] = None
-    can_broadcast: bool = True
-    can_escalate: bool = True
-    can_propagate: bool = True
+
+    # TODO - expose all below to cli utils
+    can_broadcast: bool = True # allowed to send BROADCAST type messages
+    can_escalate: bool = True # allowed to send ESCALATE type messages
+    can_propagate: bool = True # allowed to send PROPAGATE type messages
+
+    locked: bool = False  # it's on database, but server wont allow to connect
+    can_send_binary: bool = True  # if False all incoming binary payloads will be dropped
 
     def __post_init__(self):
         """
