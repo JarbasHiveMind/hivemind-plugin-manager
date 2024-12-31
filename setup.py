@@ -6,7 +6,6 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def get_version():
     """ Find the version of the package"""
-    version = None
     version_file = os.path.join(BASEDIR, 'hivemind_plugin_manager', 'version.py')
     major, minor, build, alpha = (None, None, None, None)
     with open(version_file) as f:
@@ -48,7 +47,10 @@ setup(
     url='https://github.com/JarbasHiveMind/hivemind-plugin-manager',
     license='Apache-2.0',
     author='jarbasAi',
-    #install_requires=required("requirements.txt"),
+    install_requires=required("requirements.txt"),
     author_email='jarbasai@mailfence.com',
-    description='plugin manager for hivemind-core'
+    description='plugin manager for hivemind-core',
+    entry_points={
+        "console_scripts": ["hpm=hivemind_plugin_manager.tui:cli"]
+    }
 )

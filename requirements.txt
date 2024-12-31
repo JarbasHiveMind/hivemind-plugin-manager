@@ -1,0 +1,3 @@
+json_database
+ovos-bus-client
+ovos-utils
