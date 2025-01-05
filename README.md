@@ -14,6 +14,7 @@ The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and
 
 - **Factories for Plugin Instantiation**: Factories for creating instances of each plugin type (database, agent protocol, network protocol, binary protocol) based on user configurations.
 
+
 ## Installation
 
 ```bash
@@ -81,6 +82,10 @@ binary_data_handler_instance = BinaryDataHandlerProtocolFactory.create("hivemind
 ```
 
 ## Plugin Types
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/160ebc5c-da61-4175-98dd-ade24bb218e3" alt="HiveMind Plugin Manager" width="800">
+</div>
 
 ### 1. **Database Plugins**
 
