@@ -1,12 +1,12 @@
 # Changelog
 
-## [0.4.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.0a1) (2024-12-30)
+## [0.4.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a1) (2025-12-18)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.3.0...0.4.0a1)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.0...0.4.1a1)
 
 **Merged pull requests:**
 
-- feat:tui [\#9](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/9) ([JarbasAl](https://github.com/JarbasAl))
+- chore: Configure Renovate [\#12](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/12) ([renovate[bot]](https://github.com/apps/renovate))
 
 
 
