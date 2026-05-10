@@ -42,6 +42,7 @@ class Client:
     intent_blacklist: List[str] = field(default_factory=list)
     skill_blacklist: List[str] = field(default_factory=list)
     message_blacklist: List[str] = field(default_factory=list)
+    pipeline_blacklist: List[str] = field(default_factory=list)
     allowed_types: List[str] = field(default_factory=list)
     crypto_key: Optional[str] = None
     password: Optional[str] = None
