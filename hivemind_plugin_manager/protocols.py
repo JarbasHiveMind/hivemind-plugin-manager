@@ -1,13 +1,25 @@
+from __future__ import annotations
+
 import abc
 import dataclasses
+import time
 from dataclasses import dataclass
-from typing import Dict, Any, Union, Optional, Callable
+from typing import Dict, Any, Union, Optional, Callable, TYPE_CHECKING
 
 from ovos_bus_client import MessageBusClient
 from ovos_utils.fakebus import FakeBus
 from ovos_utils.log import LOG
 
 from hivemind_bus_client.identity import NodeIdentity
+
+if TYPE_CHECKING:
+    from ovos_bus_client.message import Message
+    from hivemind_bus_client.message import HiveMessage
+    from hivemind_plugin_manager.database import Client
+
+    ClientDatabase = Any
+    HiveMindClientConnection = Any
+    HiveMindListenerProtocol = Any
 
 
 def on_disconnect(client: 'HiveMindClientConnection'):
@@ -55,6 +67,65 @@ class _SubProtocol:
         if not self.hm_protocol:
             return {}
         return self.hm_protocol.clients
+
+
+@dataclass
+class PolicyContext:
+    """Trusted server-side context supplied to policy plugins.
+
+    Policy plugins should use the authenticated client and database user
+    objects instead of trusting identity from incoming HiveMind message context.
+    """
+    client: Optional['HiveMindClientConnection'] = None
+    user: Optional['Client'] = None
+    source_ip: str = ""
+    metadata: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    created_at: float = dataclasses.field(default_factory=time.time)
+
+
+@dataclass
+class PolicyDecision:
+    """Generic allow/deny response from a policy plugin."""
+    allowed: bool = True
+    reason: str = ""
+    code: str = ""
+    message_type: str = "hive.policy.denied"
+    data: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    context_patch: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    stop_processing: bool = False
+
+
+@dataclass
+class PolicyProtocol(_SubProtocol):
+    """Generic policy extension point for dynamic HiveMind access control."""
+    config: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    hm_protocol: Optional['HiveMindListenerProtocol'] = None
+    callbacks: ClientCallbacks = dataclasses.field(default_factory=ClientCallbacks)
+
+    def authorize_client(self,
+                         context: PolicyContext) -> PolicyDecision:
+        return PolicyDecision()
+
+    def authorize_hive_message(self,
+                               message: 'HiveMessage',
+                               context: PolicyContext) -> PolicyDecision:
+        return PolicyDecision()
+
+    def authorize_bus_message(self,
+                              message: 'Message',
+                              context: PolicyContext) -> PolicyDecision:
+        return PolicyDecision()
+
+    def authorize_binary_payload(self,
+                                 message: 'HiveMessage',
+                                 context: PolicyContext) -> PolicyDecision:
+        return PolicyDecision()
+
+    def record_bus_message(self,
+                           message: 'Message',
+                           context: PolicyContext,
+                           result: Optional[Any] = None):
+        pass
 
 
 @dataclass

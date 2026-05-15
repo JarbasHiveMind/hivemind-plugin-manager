@@ -1,10 +1,23 @@
+from __future__ import annotations
+
 import enum
-from typing import Optional, Dict, Any, Union, Type
+from typing import Optional, Dict, Any, Union, Type, TYPE_CHECKING
 
 from ovos_utils.log import LOG
 
 from hivemind_plugin_manager.database import AbstractDB, AbstractRemoteDB
-from hivemind_plugin_manager.protocols import AgentProtocol, BinaryDataHandlerProtocol, NetworkProtocol
+from hivemind_plugin_manager.protocols import (
+    AgentProtocol,
+    BinaryDataHandlerProtocol,
+    NetworkProtocol,
+    PolicyProtocol
+)
+
+if TYPE_CHECKING:
+    from ovos_bus_client import MessageBusClient
+    from ovos_utils.fakebus import FakeBus
+
+    HiveMindListenerProtocol = Any
 
 
 class HiveMindPluginTypes(str, enum.Enum):
@@ -12,6 +25,7 @@ class HiveMindPluginTypes(str, enum.Enum):
     NETWORK_PROTOCOL = "hivemind.network.protocol"
     AGENT_PROTOCOL = "hivemind.agent.protocol"
     BINARY_PROTOCOL = "hivemind.binary.protocol"
+    POLICY = "hivemind.policy"
 
 
 class DatabaseFactory:
@@ -89,6 +103,23 @@ class BinaryDataHandlerProtocolFactory:
         return plugin(config=config, hm_protocol=hm_protocol, agent_protocol=agent_protocol)
 
 
+class PolicyProtocolFactory:
+    @classmethod
+    def get_class(cls, plugin_name: str) -> Type[PolicyProtocol]:
+        plugins = find_plugins(HiveMindPluginTypes.POLICY)
+        if plugin_name not in plugins:
+            raise KeyError(f"'{plugin_name}' not found. Available plugins: {list(plugins.keys())}")
+        return plugins[plugin_name]
+
+    @classmethod
+    def create(cls, plugin_name: str,
+               config: Optional[Dict[str, Any]] = None,
+               hm_protocol: Optional['HiveMindListenerProtocol'] = None) -> PolicyProtocol:
+        config = config or {}
+        plugin = cls.get_class(plugin_name)
+        return plugin(config=config, hm_protocol=hm_protocol)
+
+
 def _iter_entrypoints(plug_type: Optional[str]):
     """
     Return an iterator containing all entrypoints of the requested type
@@ -151,3 +182,4 @@ if __name__ == "__main__":
     # 'hivemind-persona-agent-plugin': <class 'ovos_persona.hpm.PersonaProtocol'>}}
     print(find_plugins(HiveMindPluginTypes.BINARY_PROTOCOL))
     # {'hivemind-audio-binary-protocol-plugin': <class 'hivemind_listener.protocol.AudioBinaryProtocol'>}
+    print(find_plugins(HiveMindPluginTypes.POLICY))
