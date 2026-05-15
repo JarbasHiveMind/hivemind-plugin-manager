@@ -71,10 +71,11 @@ class _SubProtocol:
 
 @dataclass
 class PolicyContext:
-    """Trusted server-side context supplied to policy plugins.
+    """Trusted server-side context supplied to dynamic ACL plugins.
 
-    Policy plugins should use the authenticated client and database user
-    objects instead of trusting identity from incoming HiveMind message context.
+    The authenticated api_key remains the HiveMind identity. Policy plugins
+    should use this client/user context instead of trusting fields from
+    incoming HiveMind messages.
     """
     client: Optional['HiveMindClientConnection'] = None
     user: Optional['Client'] = None
@@ -85,7 +86,7 @@ class PolicyContext:
 
 @dataclass
 class PolicyDecision:
-    """Generic allow/deny response from a policy plugin."""
+    """Allow/deny response from a policy plugin."""
     allowed: bool = True
     reason: str = ""
     code: str = ""
@@ -101,10 +102,6 @@ class PolicyProtocol(_SubProtocol):
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None
     callbacks: ClientCallbacks = dataclasses.field(default_factory=ClientCallbacks)
-
-    def authorize_client(self,
-                         context: PolicyContext) -> PolicyDecision:
-        return PolicyDecision()
 
     def authorize_hive_message(self,
                                message: 'HiveMessage',

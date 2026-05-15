@@ -6,6 +6,16 @@ Package entry point:
     hivemind.policy =
         example-utterance-limit = my_plugin:UtteranceLimitPolicy
 
+HiveMind Core config:
+
+    {
+        "policy": {
+            "example-utterance-limit": {
+                "limit": 10
+            }
+        }
+    }
+
 This example keeps counts in memory so it is only useful for tests or demos.
 Production quota plugins should use persistent storage.
 """

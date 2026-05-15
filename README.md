@@ -1,6 +1,6 @@
 # HiveMind Plugin Manager
 
-The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and loading plugins within the HiveMind ecosystem. It supports various plugin types, including databases, network protocols, agent protocols, and binary data handlers. HPM allows for dynamic integration of these plugins to enhance the functionality of HiveMind agents, offering a flexible and extensible architecture.
+The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and loading plugins within the HiveMind ecosystem. It supports various plugin types, including databases, network protocols, agent protocols, binary data handlers, and policy hooks. HPM allows for dynamic integration of these plugins to enhance the functionality of HiveMind agents, offering a flexible and extensible architecture.
 
 ## Features
 
@@ -9,10 +9,11 @@ The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and
   - **Agent Protocol Plugins**: Integrates agent protocols like OVOS and Persona, enabling seamless communication between HiveMind agents.
   - **Network Protocol Plugins**: Enables network protocols such as WebSockets for distributed communication.
   - **Binary Data Handler Plugins**: Handle binary data communication, like audio data over HiveMind.
+  - **Policy Plugins**: Add dynamic ACL checks before HiveMind messages reach the bus.
 
 - **Plugin Loading**: Dynamically load specific plugins by name, type, or from available entry points.
 
-- **Factories for Plugin Instantiation**: Factories for creating instances of each plugin type (database, agent protocol, network protocol, binary protocol) based on user configurations.
+- **Factories for Plugin Instantiation**: Factories for creating instances of each plugin type (database, agent protocol, network protocol, binary protocol, policy) based on user configurations.
 
 
 ## Installation
@@ -81,6 +82,15 @@ from hivemind_plugin_manager import BinaryDataHandlerProtocolFactory
 binary_data_handler_instance = BinaryDataHandlerProtocolFactory.create("hivemind-audio-binary-protocol-plugin")
 ```
 
+#### Policy Protocol Factory
+
+```python
+from hivemind_plugin_manager import PolicyProtocolFactory
+
+# Create a dynamic ACL/policy protocol instance
+policy_instance = PolicyProtocolFactory.create("example-utterance-limit", config={"limit": 10})
+```
+
 ## Plugin Types
 
 <div align="center">
@@ -111,3 +121,15 @@ Enables network communication protocols, such as:
 ### 4. **Binary Data Handler Protocol Plugins**
 
 Handles communication of binary data types, like audio, using specialized protocols.
+
+### 5. **Policy Plugins**
+
+Policy plugins provide dynamic ACL checks while keeping HiveMind clients identified by `api_key`. A policy can allow a message, deny it before it reaches the bus, or patch the message context with extra ACL data.
+
+Policies are registered through the `hivemind.policy` entry point:
+
+```ini
+[options.entry_points]
+hivemind.policy =
+    example-utterance-limit = my_plugin:UtteranceLimitPolicy
+```
