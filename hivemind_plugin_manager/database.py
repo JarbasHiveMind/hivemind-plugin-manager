@@ -94,9 +94,8 @@ class Client:
         if isinstance(client_data, str):
             client_data = json.loads(client_data)
         known_fields = {f.name for f in fields(Client)}
-        metadata = client_data.get("metadata")
-        if not isinstance(metadata, dict):
-            metadata = {}
+        raw_metadata = client_data.get("metadata")
+        metadata = dict(raw_metadata) if isinstance(raw_metadata, dict) else {}
 
         payload = {
             key: value
