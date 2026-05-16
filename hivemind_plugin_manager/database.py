@@ -153,7 +153,7 @@ class Client:
         """
         try:
             other = cast2client(other)
-        except:
+        except TypeError:
             pass
         if isinstance(other, Client):
             return self.serialize() == other.serialize()
