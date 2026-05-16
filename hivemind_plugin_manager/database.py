@@ -1,10 +1,10 @@
 import abc
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import List, Dict, Union, Any, Optional, Iterable
 
 
-ClientDict = Dict[str, Union[str, int, float, List[str]]]
+ClientDict = Dict[str, Any]
 ClientTypes = Union[None, 'Client',
                     str,  # json
                     ClientDict,  # dict
@@ -48,6 +48,7 @@ class Client:
     can_broadcast: bool = True
     can_escalate: bool = True
     can_propagate: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """
@@ -57,6 +58,8 @@ class Client:
             raise ValueError("client_id should be an integer")
         if not isinstance(self.is_admin, bool):
             raise ValueError("is_admin should be a boolean")
+        if not isinstance(self.metadata, dict):
+            self.metadata = {}
         self.allowed_types = self.allowed_types or ["recognizer_loop:utterance",
                                                     "recognizer_loop:record_begin",
                                                     "recognizer_loop:record_end",
@@ -90,8 +93,21 @@ class Client:
         """
         if isinstance(client_data, str):
             client_data = json.loads(client_data)
-        # TODO filter kwargs with inspect
-        return Client(**client_data)
+        known_fields = {f.name for f in fields(Client)}
+        metadata = client_data.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
+
+        payload = {
+            key: value
+            for key, value in client_data.items()
+            if key in known_fields and key != "metadata"
+        }
+        for key, value in client_data.items():
+            if key not in known_fields:
+                metadata.setdefault(key, value)
+        payload["metadata"] = metadata
+        return Client(**payload)
 
     def __getitem__(self, item: str) -> Any:
         """
