@@ -96,9 +96,7 @@ class Client:
         else:
             client_data = dict(client_data)  # don't mutate caller's dict
 
-        metadata = client_data.pop("metadata", None)
-        if not isinstance(metadata, dict):
-            metadata = {}
+        metadata = client_data.pop("metadata", None) or {}
 
         known = {f.name for f in fields(Client)}
         extras = {k: client_data.pop(k) for k in list(client_data) if k not in known}

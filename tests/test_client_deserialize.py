@@ -39,13 +39,13 @@ class TestClientDeserialize(unittest.TestCase):
         )
         self.assertEqual(c.metadata, {"weird": 42, "other": 1})
 
-    def test_non_dict_metadata_coerced_to_empty(self):
-        c = Client.deserialize(self._base(metadata="nope"))
-        self.assertEqual(c.metadata, {})
-
     def test_none_metadata_coerced_to_empty(self):
         c = Client.deserialize(self._base(metadata=None))
         self.assertEqual(c.metadata, {})
+
+    def test_non_dict_metadata_raises(self):
+        with self.assertRaises(TypeError):
+            Client.deserialize(self._base(metadata="nope"))
 
     def test_deserialize_does_not_mutate_input(self):
         payload = self._base(weird=42, metadata={"a": 1})
