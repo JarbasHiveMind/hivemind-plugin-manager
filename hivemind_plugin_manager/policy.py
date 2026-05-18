@@ -4,9 +4,12 @@ A **policy plugin** is HiveMind's admission-control point: it sees every
 Mycroft ``Message`` (and every binary payload) about to be forwarded to the
 agent bus, and can allow it, deny it, or mutate it.
 
-This module ships only the *primitives* — the plugin base class and the
-typed data the chain runner consumes. The actual chain runner lives in
-``hivemind-core`` and is the consumer of everything declared here.
+This module ships only the *primitives* — the plugin base class, the
+typed verdict, and the :class:`Mutation` abstract base class. Concrete
+mutation kinds are agent-specific and live with their consumer (e.g.
+the OVOS agent plugin ships ``AddBlacklistedSkill``, ``AddBlacklistedIntent``,
+``RewriteUtterance``, etc., since those manipulate OVOS session/message
+shape). New agent integrations bring their own mutation set.
 
 Three concepts:
 
@@ -15,10 +18,9 @@ Three concepts:
 - :class:`Verdict` — what ``review()`` returns. Either allow (optionally
   carrying mutations) or deny (with a code, reason, and structured data
   for the client-side denial message).
-- :class:`Mutation` — typed actions a policy can request on a message that
-  is being allowed. Stdlib subclasses cover the common cases; new mutation
-  kinds are added here so the set is greppable and the chain runner stays
-  honest about what plugins are allowed to change.
+- :class:`Mutation` — abstract base for typed actions a policy can request
+  on a message that is being allowed. Concrete subclasses live with the
+  agent plugin that knows the message shape.
 
 Design references:
 
@@ -33,24 +35,22 @@ from __future__ import annotations
 import abc
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
-
-from ovos_utils.log import LOG
+from typing import Any, Dict, List, Optional
 
 from hivemind_plugin_manager.protocols import _SubProtocol
 
 
 # ---------------------------------------------------------------------------
-# Mutations
+# Mutation ABC
 # ---------------------------------------------------------------------------
 
 class Mutation(abc.ABC):
     """A typed action a policy can request on a message being allowed.
 
+    Concrete subclasses are agent-specific and live with the consumer
+    (e.g. ``hivemind_ovos_agent_plugin.policy`` for the OVOS bridge).
     Adding new mutation kinds is the explicit, greppable way to extend
-    what policies are allowed to change. Don't introduce a free-form
-    dict-merge mutation; if there's a recurring need, add a typed
-    subclass here.
+    what policies are allowed to change on that agent's messages.
     """
 
     @abc.abstractmethod
@@ -64,105 +64,6 @@ class Mutation(abc.ABC):
         don't kill the whole admission step.
         """
         raise NotImplementedError
-
-
-@dataclass
-class AddBlacklistedSkill(Mutation):
-    """Add a skill_id to ``message.context["session"]["blacklisted_skills"]``."""
-    skill_id: str
-
-    def apply(self, message, client) -> None:
-        session = _ensure_session(message)
-        blacklist = session.setdefault("blacklisted_skills", [])
-        if self.skill_id not in blacklist:
-            blacklist.append(self.skill_id)
-
-
-@dataclass
-class AddBlacklistedIntent(Mutation):
-    """Add an intent name to ``message.context["session"]["blacklisted_intents"]``."""
-    intent_name: str
-
-    def apply(self, message, client) -> None:
-        session = _ensure_session(message)
-        blacklist = session.setdefault("blacklisted_intents", [])
-        if self.intent_name not in blacklist:
-            blacklist.append(self.intent_name)
-
-
-@dataclass
-class AddBlacklistedMessageType(Mutation):
-    """Add a Mycroft message-type pattern to a session-level message blacklist."""
-    msg_type: str
-
-    def apply(self, message, client) -> None:
-        session = _ensure_session(message)
-        blacklist = session.setdefault("blacklisted_message_types", [])
-        if self.msg_type not in blacklist:
-            blacklist.append(self.msg_type)
-
-
-@dataclass
-class SetSessionField(Mutation):
-    """Set a single key in ``message.context["session"]``."""
-    key: str
-    value: Any
-
-    def apply(self, message, client) -> None:
-        session = _ensure_session(message)
-        session[self.key] = self.value
-
-
-@dataclass
-class SetContextField(Mutation):
-    """Set a key path in ``message.context``.
-
-    ``path`` is a tuple of dict keys. Intermediate dicts are created if
-    missing. Use this when a policy needs to write outside the
-    ``session`` subtree.
-    """
-    path: Tuple[str, ...]
-    value: Any
-
-    def apply(self, message, client) -> None:
-        if not self.path:
-            return
-        target = message.context
-        if not isinstance(target, dict):
-            target = {}
-            message.context = target
-        for key in self.path[:-1]:
-            nxt = target.get(key)
-            if not isinstance(nxt, dict):
-                nxt = {}
-                target[key] = nxt
-            target = nxt
-        target[self.path[-1]] = self.value
-
-
-@dataclass
-class RewriteUtterance(Mutation):
-    """Replace the utterance text in a ``recognizer_loop:utterance``
-    Mycroft message. Silent no-op on any other ``msg_type``."""
-    text: str
-
-    def apply(self, message, client) -> None:
-        if getattr(message, "msg_type", None) != "recognizer_loop:utterance":
-            return
-        if not isinstance(message.data, dict):
-            return
-        message.data["utterances"] = [self.text]
-
-
-def _ensure_session(message) -> Dict[str, Any]:
-    """Return ``message.context["session"]``, creating it if missing."""
-    if not isinstance(message.context, dict):
-        message.context = {}
-    session = message.context.get("session")
-    if not isinstance(session, dict):
-        session = {}
-        message.context["session"] = session
-    return session
 
 
 # ---------------------------------------------------------------------------
@@ -268,10 +169,4 @@ __all__ = [
     "PolicyPlugin",
     "Verdict",
     "Mutation",
-    "AddBlacklistedSkill",
-    "AddBlacklistedIntent",
-    "AddBlacklistedMessageType",
-    "SetSessionField",
-    "SetContextField",
-    "RewriteUtterance",
 ]

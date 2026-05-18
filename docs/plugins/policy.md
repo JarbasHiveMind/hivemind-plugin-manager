@@ -122,28 +122,40 @@ Mutations attached to a *denying* verdict are ignored.
 
 ## `Mutation`
 
-Typed actions a policy can request on a message being allowed. Adding
-new mutation kinds is the explicit, greppable way to extend what
-policies are allowed to change — there is no free-form dict-merge
-mutation by design.
+Typed actions a policy can request on a message being allowed.
+`hivemind-plugin-manager` ships only the abstract base class
+(`Mutation`) — concrete mutations are **agent-specific** and live with
+the agent plugin that knows the message shape. The OVOS agent plugin,
+for example, ships:
 
-| Class | Effect |
-|---|---|
-| `AddBlacklistedSkill(skill_id)` | Appends to `message.context["session"]["blacklisted_skills"]`. |
-| `AddBlacklistedIntent(intent_name)` | Appends to `message.context["session"]["blacklisted_intents"]`. |
-| `AddBlacklistedMessageType(msg_type)` | Appends to `message.context["session"]["blacklisted_message_types"]`. |
-| `SetSessionField(key, value)` | Sets one key in `message.context["session"]`. |
-| `SetContextField(path, value)` | Sets a nested key in `message.context` (tuple-typed path). |
-| `RewriteUtterance(text)` | Replaces `data["utterances"]` on a `recognizer_loop:utterance` message. Silent no-op on any other `msg_type`. |
+| Class | Effect | Where |
+|---|---|---|
+| `AddBlacklistedSkill(skill_id)` | Appends to `message.context["session"]["blacklisted_skills"]`. | [`hivemind_ovos_agent_plugin.policy`](https://github.com/JarbasHiveMind/hivemind-ovos-agent-plugin) |
+| `AddBlacklistedIntent(intent_name)` | Appends to `message.context["session"]["blacklisted_intents"]`. | same |
+| `AddBlacklistedMessageType(msg_type)` | Appends to `message.context["session"]["blacklisted_message_types"]`. | same |
+| `SetSessionField(key, value)` | Sets one key in `message.context["session"]`. | same |
+| `SetContextField(path, value)` | Sets a nested key in `message.context` (tuple-typed path). | same |
+| `RewriteUtterance(text)` | Replaces `data["utterances"]` on a `recognizer_loop:utterance` message. | same |
 
-All mutations are idempotent on list mutations (no duplicates) and
-robust to non-dict context/session values (they coerce). Source:
-`hivemind_plugin_manager/policy.py`.
+If you write an agent integration for something other than OVOS (e.g. a
+non-Mycroft skill engine), bring your own mutation set. The contract is
+just: subclass `Mutation`, implement `apply(message, client)`.
 
-If you need a new mutation kind, add it here in
-`hivemind-plugin-manager` rather than as a free-form mechanism in your
-plugin — the chain runner is meant to know what plugins are allowed to
-change.
+```python
+from hivemind_plugin_manager import Mutation
+
+class TagWithCorrelationID(Mutation):
+    def __init__(self, correlation_id: str):
+        self.correlation_id = correlation_id
+
+    def apply(self, message, client) -> None:
+        message.context["correlation_id"] = self.correlation_id
+```
+
+Why typed mutations and not a free-form dict-merge? So the chain runner
+(and reviewers) can see exactly what each plugin is allowed to change.
+Add new mutation kinds as named subclasses in the consumer that
+understands the field.
 
 ---
 
@@ -186,6 +198,8 @@ deployment can have multiple HiveMind clients sharing one quota.
 
 ```python
 from hivemind_plugin_manager import PolicyPlugin, Verdict
+# Mutations live with the agent plugin — import what you need from there.
+# from hivemind_ovos_agent_plugin.policy import AddBlacklistedSkill
 
 
 class IntentQuotaPolicy(PolicyPlugin):

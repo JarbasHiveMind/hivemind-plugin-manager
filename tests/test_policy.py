@@ -1,31 +1,28 @@
-"""Tests for hivemind_plugin_manager.policy.
+"""Tests for hivemind_plugin_manager.policy primitives.
 
 Covers:
-- Mutation subclasses (apply behaviour + idempotency).
 - Verdict factories (allow / deny).
 - PolicyPlugin default behaviour (no-op allow + observe).
 - PolicyPluginFactory entry-point discovery.
 - Re-exports from the package top-level.
+- Mutation ABC contract.
+
+Concrete mutation subclasses are agent-specific and live with their
+consumer (e.g. ``hivemind_ovos_agent_plugin.policy``); they are tested
+there.
 """
 from __future__ import annotations
 
-import dataclasses
 import unittest
 from unittest.mock import MagicMock, patch
 
-from hivemind_plugin_manager import (HiveMindPluginTypes, PolicyPlugin,
-                                     PolicyPluginFactory, Verdict)
-from hivemind_plugin_manager.policy import (AddBlacklistedIntent,
-                                            AddBlacklistedMessageType,
-                                            AddBlacklistedSkill, Mutation,
-                                            RewriteUtterance, SetContextField,
-                                            SetSessionField)
+from hivemind_plugin_manager import (HiveMindPluginTypes, Mutation,
+                                     PolicyPlugin, PolicyPluginFactory,
+                                     Verdict)
 
 
 class _FakeMessage:
-    """Minimal stand-in for ovos_bus_client.message.Message — just enough
-    surface for the Mutation tests. Avoids the bus_client dependency in
-    these unit tests."""
+    """Minimal stand-in for ovos_bus_client.message.Message."""
 
     def __init__(self, msg_type="t", data=None, context=None):
         self.msg_type = msg_type
@@ -45,11 +42,14 @@ class TestVerdictFactories(unittest.TestCase):
         self.assertEqual(v.mutations, [])
 
     def test_allow_with_mutations(self):
-        m = AddBlacklistedSkill("foo")
-        v = Verdict.allow(m, AddBlacklistedIntent("bar"))
+        class _M(Mutation):
+            def apply(self, message, client) -> None:
+                pass
+
+        m1, m2 = _M(), _M()
+        v = Verdict.allow(m1, m2)
         self.assertFalse(v.denied)
-        self.assertEqual(len(v.mutations), 2)
-        self.assertIs(v.mutations[0], m)
+        self.assertEqual(v.mutations, [m1, m2])
 
     def test_deny_basic(self):
         v = Verdict.deny("quota_exceeded")
@@ -68,121 +68,28 @@ class TestVerdictFactories(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Mutations
+# Mutation ABC
 # ---------------------------------------------------------------------------
 
-class TestAddBlacklistedSkill(unittest.TestCase):
-    def test_creates_list_when_missing(self):
+class TestMutationABC(unittest.TestCase):
+    def test_cannot_instantiate_abstract(self):
+        with self.assertRaises(TypeError):
+            Mutation()
+
+    def test_subclass_must_implement_apply(self):
+        class _Incomplete(Mutation):
+            pass
+        with self.assertRaises(TypeError):
+            _Incomplete()
+
+    def test_concrete_subclass_works(self):
+        class _Concrete(Mutation):
+            def apply(self, message, client) -> None:
+                message.context["k"] = "v"
+
         msg = _FakeMessage()
-        AddBlacklistedSkill("weather.skill").apply(msg, client=None)
-        self.assertEqual(
-            msg.context["session"]["blacklisted_skills"],
-            ["weather.skill"],
-        )
-
-    def test_appends_to_existing(self):
-        msg = _FakeMessage(context={"session": {"blacklisted_skills": ["a"]}})
-        AddBlacklistedSkill("b").apply(msg, client=None)
-        self.assertEqual(
-            msg.context["session"]["blacklisted_skills"], ["a", "b"],
-        )
-
-    def test_dedupes(self):
-        msg = _FakeMessage(context={"session": {"blacklisted_skills": ["a"]}})
-        AddBlacklistedSkill("a").apply(msg, client=None)
-        self.assertEqual(msg.context["session"]["blacklisted_skills"], ["a"])
-
-    def test_recovers_from_non_dict_session(self):
-        msg = _FakeMessage(context={"session": "garbage"})
-        AddBlacklistedSkill("x").apply(msg, client=None)
-        self.assertEqual(msg.context["session"], {"blacklisted_skills": ["x"]})
-
-    def test_recovers_from_non_dict_context(self):
-        msg = _FakeMessage(context="garbage")
-        AddBlacklistedSkill("x").apply(msg, client=None)
-        self.assertEqual(msg.context, {"session": {"blacklisted_skills": ["x"]}})
-
-
-class TestAddBlacklistedIntent(unittest.TestCase):
-    def test_dedupes_and_appends(self):
-        msg = _FakeMessage()
-        AddBlacklistedIntent("intent.a").apply(msg, client=None)
-        AddBlacklistedIntent("intent.b").apply(msg, client=None)
-        AddBlacklistedIntent("intent.a").apply(msg, client=None)
-        self.assertEqual(
-            msg.context["session"]["blacklisted_intents"],
-            ["intent.a", "intent.b"],
-        )
-
-
-class TestAddBlacklistedMessageType(unittest.TestCase):
-    def test_appends(self):
-        msg = _FakeMessage()
-        AddBlacklistedMessageType("speak").apply(msg, client=None)
-        self.assertEqual(
-            msg.context["session"]["blacklisted_message_types"], ["speak"],
-        )
-
-
-class TestSetSessionField(unittest.TestCase):
-    def test_sets_field(self):
-        msg = _FakeMessage()
-        SetSessionField("lang", "pt-pt").apply(msg, client=None)
-        self.assertEqual(msg.context["session"]["lang"], "pt-pt")
-
-    def test_overwrites_existing(self):
-        msg = _FakeMessage(context={"session": {"lang": "en-us"}})
-        SetSessionField("lang", "de-de").apply(msg, client=None)
-        self.assertEqual(msg.context["session"]["lang"], "de-de")
-
-
-class TestSetContextField(unittest.TestCase):
-    def test_sets_top_level_key(self):
-        msg = _FakeMessage()
-        SetContextField(("source",), "policy").apply(msg, client=None)
-        self.assertEqual(msg.context["source"], "policy")
-
-    def test_creates_nested_path(self):
-        msg = _FakeMessage()
-        SetContextField(("a", "b", "c"), 1).apply(msg, client=None)
-        self.assertEqual(msg.context["a"]["b"]["c"], 1)
-
-    def test_overwrites_non_dict_intermediate(self):
-        msg = _FakeMessage(context={"a": "scalar"})
-        SetContextField(("a", "b"), 1).apply(msg, client=None)
-        self.assertEqual(msg.context["a"], {"b": 1})
-
-    def test_empty_path_is_noop(self):
-        msg = _FakeMessage(context={"k": "v"})
-        SetContextField((), "anything").apply(msg, client=None)
+        _Concrete().apply(msg, client=None)
         self.assertEqual(msg.context, {"k": "v"})
-
-    def test_non_dict_context_is_replaced(self):
-        msg = _FakeMessage(context="garbage")
-        SetContextField(("k",), "v").apply(msg, client=None)
-        self.assertEqual(msg.context, {"k": "v"})
-
-
-class TestRewriteUtterance(unittest.TestCase):
-    def test_rewrites_recognizer_loop_utterance(self):
-        msg = _FakeMessage(
-            "recognizer_loop:utterance",
-            data={"utterances": ["old"], "lang": "en-us"},
-        )
-        RewriteUtterance("new").apply(msg, client=None)
-        self.assertEqual(msg.data["utterances"], ["new"])
-        self.assertEqual(msg.data["lang"], "en-us")  # unrelated fields preserved
-
-    def test_noop_for_other_msg_types(self):
-        msg = _FakeMessage("speak", data={"utterance": "hi"})
-        RewriteUtterance("new").apply(msg, client=None)
-        self.assertEqual(msg.data, {"utterance": "hi"})  # unchanged
-
-    def test_noop_when_data_is_not_dict(self):
-        msg = _FakeMessage("recognizer_loop:utterance", data=None)
-        msg.data = ["not", "a", "dict"]
-        RewriteUtterance("x").apply(msg, client=None)
-        self.assertEqual(msg.data, ["not", "a", "dict"])
 
 
 # ---------------------------------------------------------------------------
@@ -246,13 +153,21 @@ class TestPolicyPluginFactory(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestPackageReExports(unittest.TestCase):
-    def test_policy_types_exposed_at_top_level(self):
+    def test_primitives_exposed_at_top_level(self):
         import hivemind_plugin_manager as pkg
         for name in ("PolicyPlugin", "Verdict", "Mutation",
-                     "AddBlacklistedSkill", "AddBlacklistedIntent",
+                     "PolicyPluginFactory"):
+            self.assertTrue(hasattr(pkg, name), f"missing top-level: {name}")
+
+    def test_concrete_mutations_not_re_exported(self):
+        """Concrete OVOS-specific mutations now live in hivemind-ovos-agent-plugin."""
+        import hivemind_plugin_manager as pkg
+        for name in ("AddBlacklistedSkill", "AddBlacklistedIntent",
                      "AddBlacklistedMessageType", "SetSessionField",
                      "SetContextField", "RewriteUtterance"):
-            self.assertTrue(hasattr(pkg, name), f"missing top-level: {name}")
+            self.assertFalse(hasattr(pkg, name),
+                             f"{name} should not be re-exported by the "
+                             f"generic plugin-manager")
 
     def test_policy_enum_value(self):
         self.assertEqual(HiveMindPluginTypes.POLICY.value, "hivemind.policy")
