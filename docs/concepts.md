@@ -138,6 +138,7 @@ class Client:
     can_broadcast: bool = True
     can_escalate: bool = True
     can_propagate: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
 ```
 
 Source: `hivemind_plugin_manager/database.py:35`
@@ -149,6 +150,19 @@ Notable rules enforced in `__post_init__` (`database.py:52`):
 - `allowed_types` is populated with a default set of OVOS message types when empty.
 - `"recognizer_loop:utterance"` is always appended to `allowed_types` even if the caller
   provides a custom list.
+
+### `metadata` — plugin-specific extension point
+
+`metadata` is a free-form dict that plugins can use to attach arbitrary per-client
+context (routing hints, auth metadata, feature flags, telemetry tags, etc.) without
+adding new top-level fields to the core dataclass.
+
+`Client.deserialize` (`database.py:81`) is forward-compatible with older records:
+unknown top-level keys are folded into `metadata` automatically, so a plugin can
+freely add new keys without breaking deserialisation of existing rows. If both an
+explicit `metadata` dict and a stray legacy key exist with the same name, the
+explicit one wins. A non-dict `metadata` value raises `TypeError` — intentional,
+because silently coercing it would mask serializer bugs upstream.
 
 ---
 
