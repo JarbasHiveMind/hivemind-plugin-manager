@@ -17,6 +17,7 @@ for instantiation.
 | Write an agent protocol plugin | [Agent Protocol Plugin Guide](plugins/agent-protocol.md) |
 | Write a network protocol plugin | [Network Protocol Plugin Guide](plugins/network-protocol.md) |
 | Write a binary data handler plugin | [Binary Protocol Plugin Guide](plugins/binary-protocol.md) |
+| Write a policy plugin (admission control) | [Policy Plugin Guide](plugins/policy.md) |
 | Look up every public class and function | [API Reference](api-reference.md) |
 | Understand internals, error handling, identity, factory routing | [Advanced](advanced.md) |
 | Contribute to this package | [Contributing](contributing.md) |
