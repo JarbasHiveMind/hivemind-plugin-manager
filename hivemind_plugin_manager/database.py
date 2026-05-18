@@ -93,17 +93,19 @@ class Client:
         """
         if isinstance(client_data, str):
             client_data = json.loads(client_data)
+        else:
+            client_data = dict(client_data)  # don't mutate caller's dict
 
-        data = dict(client_data)
-        raw_metadata = data.pop("metadata", None)
-        metadata = dict(raw_metadata) if isinstance(raw_metadata, dict) else {}
+        metadata = client_data.pop("metadata", None)
+        if not isinstance(metadata, dict):
+            metadata = {}
 
         known = {f.name for f in fields(Client)}
-        extras = {k: data.pop(k) for k in list(data) if k not in known}
+        extras = {k: client_data.pop(k) for k in list(client_data) if k not in known}
 
         # legacy records: fold unknown top-level keys into metadata,
         # without overwriting keys the caller set explicitly
-        return Client(**data, metadata={**extras, **metadata})
+        return Client(**client_data, metadata={**extras, **metadata})
 
     def __getitem__(self, item: str) -> Any:
         """
