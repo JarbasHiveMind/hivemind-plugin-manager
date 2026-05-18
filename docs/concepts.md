@@ -129,10 +129,7 @@ class Client:
     description: str = ""
     is_admin: bool = False
     last_seen: float = -1
-    intent_blacklist: List[str] = field(default_factory=list)
-    skill_blacklist: List[str] = field(default_factory=list)
-    message_blacklist: List[str] = field(default_factory=list)
-    allowed_types: List[str] = field(default_factory=list)
+    allowed_types: List[str] = field(default_factory=list)  # admission whitelist; deny-by-default
     crypto_key: Optional[str] = None
     password: Optional[str] = None
     can_broadcast: bool = True

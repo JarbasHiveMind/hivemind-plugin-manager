@@ -251,5 +251,126 @@ class TestAbstractRemoteDB(unittest.TestCase):
         self.assertEqual(db.search_by_value("name", "x")[0].client_id, 1)
 
 
+class TestDeprecatedBlacklistShims(unittest.TestCase):
+    """Read/write back-compat for the legacy top-level blacklist fields.
+
+    Canonical storage is now ``Client.metadata``; legacy callers keep
+    working via property shims and the deserialize() migration path.
+    """
+
+    @staticmethod
+    def _catch_warnings():
+        import warnings
+        ctx = warnings.catch_warnings(record=True)
+        caught = ctx.__enter__()
+        warnings.simplefilter("always")
+        return ctx, caught
+
+    @staticmethod
+    def _assert_has_deprecation(caught, name: str):
+        msgs = [str(w.message) for w in caught
+                if issubclass(w.category, DeprecationWarning)]
+        assert any(name in m for m in msgs), (
+            f"expected a DeprecationWarning mentioning {name!r}; got {msgs}"
+        )
+
+    def test_property_getter_reads_from_metadata(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["weather.skill"]})
+        self.assertEqual(c.skill_blacklist, ["weather.skill"])
+
+    def test_property_getter_returns_snapshot(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["a"]})
+        out = c.skill_blacklist
+        out.append("b")  # mutating the snapshot must not affect metadata
+        self.assertEqual(c.metadata["skill_blacklist"], ["a"])
+
+    def test_property_getter_empty_when_missing(self):
+        c = Client(client_id=1, api_key="k")
+        self.assertEqual(c.skill_blacklist, [])
+        self.assertEqual(c.intent_blacklist, [])
+        self.assertEqual(c.message_blacklist, [])
+
+    def test_property_setter_writes_to_metadata_and_warns(self):
+        c = Client(client_id=1, api_key="k")
+        ctx, caught = self._catch_warnings()
+        try:
+            c.skill_blacklist = ["a", "b"]
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["a", "b"])
+
+    def test_property_setter_clears_when_empty(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["a"]})
+        ctx, caught = self._catch_warnings()
+        try:
+            c.skill_blacklist = []
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertNotIn("skill_blacklist", c.metadata)
+
+    def test_deserialize_migrates_legacy_top_level_and_warns(self):
+        payload = {
+            "client_id": 1, "api_key": "k",
+            "skill_blacklist": ["s"],
+            "intent_blacklist": ["i"],
+            "message_blacklist": ["m"],
+        }
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client.deserialize(payload)
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self._assert_has_deprecation(caught, "intent_blacklist")
+        self._assert_has_deprecation(caught, "message_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["s"])
+        self.assertEqual(c.metadata["intent_blacklist"], ["i"])
+        self.assertEqual(c.metadata["message_blacklist"], ["m"])
+
+    def test_deserialize_does_not_clobber_existing_metadata(self):
+        payload = {
+            "client_id": 1, "api_key": "k",
+            "skill_blacklist": ["legacy"],
+            "metadata": {"skill_blacklist": ["from_metadata"]},
+        }
+        ctx, _ = self._catch_warnings()
+        try:
+            c = Client.deserialize(payload)
+        finally:
+            ctx.__exit__(None, None, None)
+        # explicit metadata wins
+        self.assertEqual(c.metadata["skill_blacklist"], ["from_metadata"])
+
+    def test_deserialize_no_warning_when_no_legacy_keys(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client.deserialize({
+                "client_id": 1, "api_key": "k",
+                "metadata": {"skill_blacklist": ["x"]},
+            })
+        finally:
+            ctx.__exit__(None, None, None)
+        deprecations = [w for w in caught
+                        if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(deprecations, [])
+        self.assertEqual(c.skill_blacklist, ["x"])
+
+    def test_deserialize_empty_legacy_value_does_not_warn(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            Client.deserialize({"client_id": 1, "api_key": "k",
+                                "skill_blacklist": []})
+        finally:
+            ctx.__exit__(None, None, None)
+        deprecations = [w for w in caught
+                        if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(deprecations, [])
+
+
 if __name__ == "__main__":
     unittest.main()
