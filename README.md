@@ -1,5 +1,11 @@
 # HiveMind Plugin Manager
 
+> **Full documentation:** [docs/README.md](docs/README.md)
+> — [Getting Started](docs/getting-started.md)
+> | [Concepts](docs/concepts.md)
+> | [API Reference](docs/api-reference.md)
+> | [Contributing](docs/contributing.md)
+
 The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and loading plugins within the HiveMind ecosystem. It supports various plugin types, including databases, network protocols, agent protocols, and binary data handlers. HPM allows for dynamic integration of these plugins to enhance the functionality of HiveMind agents, offering a flexible and extensible architecture.
 
 ## Features
