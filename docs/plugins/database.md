@@ -226,6 +226,17 @@ field listing. Useful helpers:
 - `Client.deserialize(str | dict)` → `Client` — `database.py:81`
 - `cast2client(value)` — converts `str`, `dict`, or `list` to `Client` / `List[Client]` — `database.py:15`
 
+### Storing plugin-specific data on a Client
+
+Use the `metadata: Dict[str, Any]` field for anything plugin-specific (routing hints,
+external IDs, feature flags). It round-trips through `serialize` / `deserialize` as-is,
+so backends storing `client.serialize()` get it for free — no schema changes needed.
+
+`deserialize` is also forward-compatible: if a backend wrote rows in an earlier
+version where a key sat at the top level of the JSON, it will be folded into
+`metadata` automatically when read back. So you can migrate a custom field into
+`metadata` without rewriting existing rows.
+
 ---
 
 ## Known Implementations

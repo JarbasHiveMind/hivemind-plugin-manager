@@ -124,10 +124,18 @@ class Client:
     can_broadcast: bool = True
     can_escalate: bool = True
     can_propagate: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
 ```
 
 `__post_init__` (`database.py:52`) enforces int/bool types and populates `allowed_types`
 with a default OVOS message type set. `"recognizer_loop:utterance"` is always present.
+
+**`metadata`** — free-form per-client dict for plugin-specific context. Stays out of
+the schema so individual plugins (auth, routing, telemetry, etc.) can attach arbitrary
+key/value data without growing the core dataclass. `deserialize` folds any unknown
+top-level keys from older records into `metadata` for forward compatibility; an
+explicit `metadata` key in the payload wins on collision. A non-dict `metadata` value
+raises `TypeError` in `deserialize` (intentional — signals upstream serializer bug).
 
 | Method | Signature | Source |
 |---|---|---|
