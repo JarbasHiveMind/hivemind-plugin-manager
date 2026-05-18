@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.5.0a1) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a2...0.5.0a1)
+
+**Merged pull requests:**
+
+- feat: client metadata support [\#23](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/23) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.4.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a2) (2026-05-18)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a1...0.4.1a2)
