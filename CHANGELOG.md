@@ -1,12 +1,28 @@
 # Changelog
 
-## [0.4.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.0a1) (2024-12-30)
+## [0.5.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.5.0a1) (2026-05-18)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.3.0...0.4.0a1)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a2...0.5.0a1)
 
 **Merged pull requests:**
 
-- feat:tui [\#9](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/9) ([JarbasAl](https://github.com/JarbasAl))
+- feat: client metadata support [\#23](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/23) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.4.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a2) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a1...0.4.1a2)
+
+**Merged pull requests:**
+
+- ci: adopt shared OpenVoiceOS/gh-automations workflows [\#24](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/24) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.4.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a1) (2025-12-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.0...0.4.1a1)
+
+**Merged pull requests:**
+
+- chore: Configure Renovate [\#12](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/12) ([renovate[bot]](https://github.com/apps/renovate))
 
 
 

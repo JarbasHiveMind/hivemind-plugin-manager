@@ -1,0 +1,13 @@
+[run]
+source = hivemind_plugin_manager
+omit =
+    hivemind_plugin_manager/tui.py
+    hivemind_plugin_manager/version.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    \.\.\.
+    pass
