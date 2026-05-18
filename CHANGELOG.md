@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a2) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a1...0.4.1a2)
+
+**Merged pull requests:**
+
+- ci: adopt shared OpenVoiceOS/gh-automations workflows [\#24](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/24) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.4.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a1) (2025-12-18)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.0...0.4.1a1)
