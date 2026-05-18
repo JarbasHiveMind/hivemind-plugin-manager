@@ -13,4 +13,4 @@ jobs:
       coverage_source: 'hivemind_plugin_manager'
       test_path: 'tests/'
       install_extras: ''
-      min_coverage: 0
+      min_coverage: 70
