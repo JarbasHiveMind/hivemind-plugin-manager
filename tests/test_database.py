@@ -129,6 +129,16 @@ class TestClient(unittest.TestCase):
         a = self._make()
         self.assertNotEqual(a, 42)
 
+    def test_equality_against_malformed_json_returns_false(self):
+        a = self._make()
+        # json.JSONDecodeError is a ValueError subclass; must not propagate
+        self.assertNotEqual(a, "not json{")
+
+    def test_equality_against_invalid_payload_returns_false(self):
+        a = self._make()
+        # __post_init__ raises ValueError on non-int client_id; must not propagate
+        self.assertNotEqual(a, {"client_id": "not-int", "api_key": "k"})
+
     def test_repr_is_serialized(self):
         c = self._make()
         self.assertEqual(repr(c), c.serialize())
