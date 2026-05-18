@@ -93,20 +93,17 @@ class Client:
         """
         if isinstance(client_data, str):
             client_data = json.loads(client_data)
-        known_fields = {f.name for f in fields(Client)}
-        raw_metadata = client_data.get("metadata")
+
+        data = dict(client_data)
+        raw_metadata = data.pop("metadata", None)
         metadata = dict(raw_metadata) if isinstance(raw_metadata, dict) else {}
 
-        payload = {
-            key: value
-            for key, value in client_data.items()
-            if key in known_fields and key != "metadata"
-        }
-        for key, value in client_data.items():
-            if key not in known_fields:
-                metadata.setdefault(key, value)
-        payload["metadata"] = metadata
-        return Client(**payload)
+        known = {f.name for f in fields(Client)}
+        extras = {k: data.pop(k) for k in list(data) if k not in known}
+
+        # legacy records: fold unknown top-level keys into metadata,
+        # without overwriting keys the caller set explicitly
+        return Client(**data, metadata={**extras, **metadata})
 
     def __getitem__(self, item: str) -> Any:
         """
