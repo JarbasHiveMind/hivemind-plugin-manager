@@ -2,7 +2,7 @@ import enum
 from typing import Optional, Dict, Any, Union, Type
 
 from ovos_utils.log import LOG
-
+from importlib.metadata import entry_points
 from hivemind_plugin_manager.database import AbstractDB, AbstractRemoteDB
 from hivemind_plugin_manager.protocols import AgentProtocol, BinaryDataHandlerProtocol, NetworkProtocol
 
@@ -89,22 +89,6 @@ class BinaryDataHandlerProtocolFactory:
         return plugin(config=config, hm_protocol=hm_protocol, agent_protocol=agent_protocol)
 
 
-def _iter_entrypoints(plug_type: Optional[str]):
-    """
-    Return an iterator containing all entrypoints of the requested type
-    @param plug_type: entrypoint name to load
-    @return: iterator of all entrypoints
-    """
-    try:
-        from importlib_metadata import entry_points
-        for entry_point in entry_points(group=plug_type):
-            yield entry_point
-    except ImportError:
-        import pkg_resources
-        for entry_point in pkg_resources.iter_entry_points(plug_type):
-            yield entry_point
-
-
 def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
     """
     Finds all plugins matching specific entrypoint type.
@@ -123,7 +107,7 @@ def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
     else:
         plugs = plug_type
     for plug in plugs:
-        for entry_point in _iter_entrypoints(plug):
+        for entry_point in entry_points(group=plug):
             try:
                 entrypoints[entry_point.name] = entry_point.load()
                 if entry_point.name not in entrypoints:
