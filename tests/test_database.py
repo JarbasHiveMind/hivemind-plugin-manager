@@ -292,22 +292,30 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(c.skill_blacklist, [])
         self.assertEqual(c.intent_blacklist, [])
 
-    def test_message_blacklist_removed_entirely(self):
+    def test_message_blacklist_kwarg_accepted_but_discarded(self):
         """message_blacklist was a design mistake from 2024-12-20
-        (commit 94a2141) — no property, no kwarg, no carry-forward.
-        Callers can still stash a value in ``metadata`` themselves if
-        they want, but the data model does not surface it."""
+        (commit 94a2141) — no property and no carry-forward. The kwarg
+        is still ACCEPTED (not TypeError) so already-shipped backends
+        passing it positionally don't crash on partial HPM upgrades.
+        The value is discarded with a DeprecationWarning."""
         # No property at the class level.
         self.assertFalse(hasattr(type(Client(client_id=1, api_key="k")),
                                   "message_blacklist"))
-        # Constructor kwarg raises — caller is using a removed API.
-        with self.assertRaises(TypeError):
-            Client(client_id=1, api_key="k", message_blacklist=["speak"])
+        # Constructor kwarg is accepted but emits a warning and
+        # discards the value — NOT carried into metadata.
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       message_blacklist=["speak"])
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "message_blacklist")
+        self.assertNotIn("message_blacklist", c.metadata)
         # Caller-supplied metadata key is still stored untouched (it's
         # just a dict — Client doesn't claim that key as special).
-        c = Client(client_id=1, api_key="k",
-                   metadata={"message_blacklist": ["speak"]})
-        self.assertEqual(c.metadata["message_blacklist"], ["speak"])
+        c2 = Client(client_id=1, api_key="k",
+                    metadata={"message_blacklist": ["speak"]})
+        self.assertEqual(c2.metadata["message_blacklist"], ["speak"])
 
     def test_property_setter_writes_to_metadata_and_warns(self):
         c = Client(client_id=1, api_key="k")

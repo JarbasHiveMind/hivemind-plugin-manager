@@ -160,7 +160,10 @@ model and never functioned as a real gate. No property, no kwarg, no carry-forwa
 
 **Legacy constructor kwargs** (`skill_blacklist`, `intent_blacklist`) are accepted via a
 wrapped `__init__` (`database.py:249`) and auto-migrated into `metadata` with a
-`DeprecationWarning`. `Client(message_blacklist=...)` raises `TypeError`.
+`DeprecationWarning`. `message_blacklist` is also accepted — but the value is
+**discarded** with a `DeprecationWarning`, not carried into `metadata`. The kwarg
+surface stays back-compat so already-shipped backends (notably the pre-release SQLite
+plugin) don't crash on partial HPM upgrades.
 
 ### `metadata` — plugin-specific extension point
 
