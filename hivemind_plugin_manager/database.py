@@ -115,13 +115,12 @@ class Client:
         else:
             self.metadata.pop("intent_blacklist", None)
 
-    # message_blacklist property removed in v0.6 — hivemind-core is
-    # whitelist-only (deny by default) and has no consumer for an
-    # outbound message blacklist. Data passed as the legacy
-    # ``message_blacklist`` kwarg or top-level key in serialized records
-    # is still preserved in metadata for back-compat / third-party
-    # plugins that may consult it, but Client no longer exposes a
-    # top-level attribute for reading it.
+    # message_blacklist is gone — the field was introduced 2024-12-20
+    # in commit 94a2141 alongside the rename/multidb refactor and
+    # contradicted the deny-by-default whitelist model. No property
+    # shim, no kwarg, no deserialize-side carry-forward: on-disk
+    # records have the key stripped silently, callers passing it as a
+    # constructor kwarg get TypeError.
 
     def serialize(self) -> str:
         """
@@ -154,7 +153,7 @@ class Client:
         # existing on-disk JSON DBs keep loading. Emits a one-time
         # DeprecationWarning per legacy key seen. Don't clobber values
         # already in metadata.
-        for legacy_key in ("skill_blacklist", "intent_blacklist", "message_blacklist"):
+        for legacy_key in ("skill_blacklist", "intent_blacklist"):
             if legacy_key in client_data:
                 val = client_data.pop(legacy_key)
                 if val:
@@ -169,6 +168,15 @@ class Client:
                         DeprecationWarning, stacklevel=3,
                     )
                     metadata.setdefault(legacy_key, list(val))
+
+        # message_blacklist was a design mistake from the 2024-12-20
+        # rename/multidb refactor — it contradicted the deny-by-default
+        # whitelist model and never functioned as a real gate. Strip it
+        # silently from on-disk records so legacy DBs keep loading.
+        # Operators who configured it can recover their list from the
+        # backend's pre-migration storage if needed; no automatic
+        # carry-forward.
+        client_data.pop("message_blacklist", None)
 
         known = {f.name for f in fields(Client)}
         extras = {k: client_data.pop(k) for k in list(client_data) if k not in known}
@@ -239,20 +247,24 @@ class Client:
 
 
 # Wrap the dataclass-generated __init__ so legacy constructor kwargs
-# (skill_blacklist, intent_blacklist, message_blacklist) are accepted
-# and auto-migrated into metadata. Done as a post-class assignment
-# because @property attributes with the same name conflict with both
-# dataclass field annotations and InitVar pseudo-fields.
+# (skill_blacklist, intent_blacklist) are accepted and auto-migrated
+# into metadata. Done as a post-class assignment because @property
+# attributes with the same name conflict with both dataclass field
+# annotations and InitVar pseudo-fields. ``message_blacklist`` is NOT
+# accepted — see comment in ``_client_init_with_legacy_kwargs``.
 _client_dataclass_init = Client.__init__
 
 
 def _client_init_with_legacy_kwargs(self, *args, skill_blacklist=None,
-                                     intent_blacklist=None,
-                                     message_blacklist=None, **kwargs):
+                                     intent_blacklist=None, **kwargs):
+    # message_blacklist is intentionally NOT accepted: the field was
+    # introduced in 2024-12-20 alongside the legitimate ACL work but
+    # contradicted the deny-by-default whitelist model and was never a
+    # supported gating mechanism. Removed outright — callers passing
+    # the kwarg get a TypeError, which is the desired signal.
     _client_dataclass_init(self, *args, **kwargs)
     for key, val in (("skill_blacklist", skill_blacklist),
-                     ("intent_blacklist", intent_blacklist),
-                     ("message_blacklist", message_blacklist)):
+                     ("intent_blacklist", intent_blacklist)):
         if val:
             warnings.warn(
                 f"Client.{key} kwarg is deprecated; auto-migrating into "

@@ -154,13 +154,13 @@ Notable rules enforced in `__post_init__` (`database.py:56`):
 `skill_blacklist` and `intent_blacklist` are **deprecated property shims** (`database.py:86`,
 `database.py:102`) that read and write `Client.metadata["skill_blacklist"]` /
 `Client.metadata["intent_blacklist"]` transparently. Setting them emits
-`DeprecationWarning`. `message_blacklist` no longer has a property at all — the field was
-removed because hivemind-core is whitelist-only (deny-by-default); any legacy data for
-this key survives in `metadata` for third-party plugin consumption.
+`DeprecationWarning`. `message_blacklist` was removed outright — it was introduced
+2024-12-20 alongside legitimate ACL work but contradicted the deny-by-default whitelist
+model and never functioned as a real gate. No property, no kwarg, no carry-forward.
 
-**Legacy constructor kwargs** (`skill_blacklist`, `intent_blacklist`, `message_blacklist`)
-are accepted via a wrapped `__init__` (`database.py:249`) and auto-migrated into
-`metadata` with a `DeprecationWarning`.
+**Legacy constructor kwargs** (`skill_blacklist`, `intent_blacklist`) are accepted via a
+wrapped `__init__` (`database.py:249`) and auto-migrated into `metadata` with a
+`DeprecationWarning`. `Client(message_blacklist=...)` raises `TypeError`.
 
 ### `metadata` — plugin-specific extension point
 
@@ -171,10 +171,11 @@ adding new top-level fields to the core dataclass.
 `Client.deserialize` (`database.py:135`) is forward-compatible with older records in two
 ways:
 
-- **Legacy blacklist fields** (`skill_blacklist`, `intent_blacklist`, `message_blacklist`)
-  found as top-level JSON keys are silently migrated into `metadata` with a
-  `DeprecationWarning`, so existing on-disk JSON databases keep loading without manual
-  migration. Source: `database.py:153`.
+- **Legacy blacklist fields** (`skill_blacklist`, `intent_blacklist`) found as top-level
+  JSON keys are silently migrated into `metadata` with a `DeprecationWarning`, so
+  existing on-disk JSON databases keep loading without manual migration. Source:
+  `database.py:153`. **`message_blacklist`** top-level keys are dropped silently — the
+  field is gone for good and the data is not carried forward.
 - **Any other unknown top-level key** is folded into `metadata` so plugin-added fields
   do not break deserialization. Explicit `metadata` dict entries win on collision.
 
@@ -205,7 +206,7 @@ by overriding it.
 
 | from → to | What the backend must do |
 |---|---|
-| `1 → 2` | Move legacy top-level OVOS blacklist fields (`skill_blacklist`, `intent_blacklist`, `message_blacklist`) into each `Client.metadata` dict (`setdefault` — never clobber an explicit metadata value), then drop the legacy storage. The `Client.metadata` shape is `{"skill_blacklist": [...], "intent_blacklist": [...], "message_blacklist": [...]}`. |
+| `1 → 2` | Move legacy top-level OVOS blacklist fields (`skill_blacklist`, `intent_blacklist`) into each `Client.metadata` dict (`setdefault` — never clobber an explicit metadata value), then drop the legacy storage. **`message_blacklist`** is dropped without carry-forward (the field was removed from the data model entirely; backends MAY still persist it in `metadata` if they like, but it is no longer a load-bearing key). |
 
 The legacy field names map 1:1 to keys under `metadata` — this is what the
 `Client.skill_blacklist` etc. property shims read from

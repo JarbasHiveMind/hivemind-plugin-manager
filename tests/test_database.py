@@ -292,14 +292,21 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(c.skill_blacklist, [])
         self.assertEqual(c.intent_blacklist, [])
 
-    def test_message_blacklist_property_removed(self):
-        """v0.6: ``Client.message_blacklist`` property was dropped because
-        hivemind-core has no consumer (whitelist-only model). The legacy
-        kwarg path still migrates the value into metadata for any
-        third-party plugin that wants it."""
+    def test_message_blacklist_removed_entirely(self):
+        """message_blacklist was a design mistake from 2024-12-20
+        (commit 94a2141) — no property, no kwarg, no carry-forward.
+        Callers can still stash a value in ``metadata`` themselves if
+        they want, but the data model does not surface it."""
+        # No property at the class level.
+        self.assertFalse(hasattr(type(Client(client_id=1, api_key="k")),
+                                  "message_blacklist"))
+        # Constructor kwarg raises — caller is using a removed API.
+        with self.assertRaises(TypeError):
+            Client(client_id=1, api_key="k", message_blacklist=["speak"])
+        # Caller-supplied metadata key is still stored untouched (it's
+        # just a dict — Client doesn't claim that key as special).
         c = Client(client_id=1, api_key="k",
                    metadata={"message_blacklist": ["speak"]})
-        self.assertFalse(hasattr(type(c), "message_blacklist"))
         self.assertEqual(c.metadata["message_blacklist"], ["speak"])
 
     def test_property_setter_writes_to_metadata_and_warns(self):
@@ -328,7 +335,7 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
             "client_id": 1, "api_key": "k",
             "skill_blacklist": ["s"],
             "intent_blacklist": ["i"],
-            "message_blacklist": ["m"],
+            "message_blacklist": ["m"],  # dropped silently, no carry-forward
         }
         ctx, caught = self._catch_warnings()
         try:
@@ -337,10 +344,12 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
             ctx.__exit__(None, None, None)
         self._assert_has_deprecation(caught, "skill_blacklist")
         self._assert_has_deprecation(caught, "intent_blacklist")
-        self._assert_has_deprecation(caught, "message_blacklist")
         self.assertEqual(c.metadata["skill_blacklist"], ["s"])
         self.assertEqual(c.metadata["intent_blacklist"], ["i"])
-        self.assertEqual(c.metadata["message_blacklist"], ["m"])
+        # message_blacklist is removed outright: not carried into metadata
+        # and no DeprecationWarning emitted (it's not "deprecated" — it's
+        # gone, and silently dropping the key is the back-compat path).
+        self.assertNotIn("message_blacklist", c.metadata)
 
     def test_deserialize_does_not_clobber_existing_metadata(self):
         payload = {
