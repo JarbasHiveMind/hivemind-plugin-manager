@@ -2,7 +2,7 @@ import abc
 import json
 import warnings
 from dataclasses import dataclass, field, fields
-from typing import List, Dict, Union, Any, Optional, Iterable
+from typing import List, Dict, Union, Any, ClassVar, Optional, Iterable
 
 
 ClientDict = Dict[str, Any]
@@ -364,6 +364,28 @@ class AbstractDB(abc.ABC):
     def sync(self):
         """update db from disk if needed"""
         pass
+
+    # Schema version of the in-memory ``Client`` shape this code expects.
+    # Bumped when the on-disk representation changes in a way that
+    # warrants a backend migration. Backends compare this against their
+    # persisted version (e.g. SQLite ``PRAGMA user_version``, a sentinel
+    # key in JSON/Redis) and call ``migrate()`` once when stored < this.
+    SCHEMA_VERSION: ClassVar[int] = 2
+
+    def migrate(self, from_version: int) -> None:
+        """Backend-specific schema/data migration hook.
+
+        Called once during backend init when the persisted schema version
+        is lower than ``SCHEMA_VERSION``. Default is a no-op so existing
+        third-party backends keep working without modification; backends
+        that store legacy fields (``skill_blacklist``, ``intent_blacklist``,
+        ``message_blacklist`` as top-level columns/keys) should override
+        this to move them into ``Client.metadata`` and drop the legacy
+        storage. Implementations MUST be idempotent and crash-safe — a
+        partial migration on retry must produce the same final state.
+
+        v1 -> v2: legacy OVOS blacklist fields migrated into metadata.
+        """
 
     def commit(self) -> bool:
         """
