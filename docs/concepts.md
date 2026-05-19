@@ -154,16 +154,18 @@ Notable rules enforced in `__post_init__` (`database.py:56`):
 `skill_blacklist` and `intent_blacklist` are **deprecated property shims** (`database.py:86`,
 `database.py:102`) that read and write `Client.metadata["skill_blacklist"]` /
 `Client.metadata["intent_blacklist"]` transparently. Setting them emits
-`DeprecationWarning`. `message_blacklist` was removed outright — it was introduced
-2024-12-20 alongside legitimate ACL work but contradicted the deny-by-default whitelist
-model and never functioned as a real gate. No property, no kwarg, no carry-forward.
+`DeprecationWarning`. `message_blacklist` was removed from the data model — it was
+introduced 2024-12-20 (commit `94a2141`) alongside legitimate ACL work but contradicted
+the deny-by-default whitelist model and never functioned as a real gate. No property,
+no carry-forward into `metadata`.
 
 **Legacy constructor kwargs** (`skill_blacklist`, `intent_blacklist`) are accepted via a
 wrapped `__init__` (`database.py:249`) and auto-migrated into `metadata` with a
-`DeprecationWarning`. `message_blacklist` is also accepted — but the value is
-**discarded** with a `DeprecationWarning`, not carried into `metadata`. The kwarg
-surface stays back-compat so already-shipped backends (notably the pre-release SQLite
-plugin) don't crash on partial HPM upgrades.
+`DeprecationWarning`. `message_blacklist` is also accepted at the kwarg surface (so
+already-shipped backends — notably the pre-release SQLite plugin's `_row_to_client` —
+don't crash on partial HPM upgrades) but the value is **discarded** with a
+`DeprecationWarning`. Net effect: callers can keep passing the kwarg during the
+upgrade window, but the data is dropped.
 
 ### `metadata` — plugin-specific extension point
 
@@ -214,6 +216,34 @@ by overriding it.
 The legacy field names map 1:1 to keys under `metadata` — this is what the
 `Client.skill_blacklist` etc. property shims read from
 (`database.py:87`–`140`).
+
+### Partial-upgrade safety
+
+HPM, the backends, and `hivemind-core` can be merged and released independently.
+Every combination is supported during the upgrade window:
+
+- **New HPM + old backends.** The wrapped `__init__` accepts every legacy kwarg
+  (`skill_blacklist`, `intent_blacklist`, `message_blacklist`) so pre-release
+  backends that pass those positionally don't crash. `skill_blacklist` and
+  `intent_blacklist` migrate into `metadata` with a `DeprecationWarning`;
+  `message_blacklist` is discarded with a `DeprecationWarning` (no
+  carry-forward). `Client.deserialize` strips the same three keys from on-disk
+  records the same way.
+- **Old HPM + new backends.** Each backend gates its `migrate()` call on
+  `getattr(AbstractDB, "SCHEMA_VERSION", 1)`, so if the constant is missing
+  the backend treats the on-disk shape as already-at-target and skips
+  migration. On-disk rows continue to carry the legacy keys; reads still
+  succeed because the backend's `_row_to_client` path doesn't depend on the
+  new contract.
+- **Mixed backend versions.** Each backend tracks its own schema version
+  natively (SQLite `PRAGMA user_version`, Redis sentinel key, JsonDB sibling
+  file). Migrating one backend has no effect on the others.
+
+The cost of this safety is that a `message_blacklist` value passed via the
+constructor kwarg silently disappears, with only a `DeprecationWarning` to
+flag it. Callers should stop passing the kwarg; it is no longer load-bearing.
+
+---
 
 Existing third-party backends that don't override `migrate()` continue to
 work — they just won't clean up legacy on-disk shape. The
