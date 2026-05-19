@@ -360,6 +360,27 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(deprecations, [])
         self.assertEqual(c.skill_blacklist, ["x"])
 
+    def test_legacy_constructor_kwarg_migrates_and_warns(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       skill_blacklist=["weather.skill"])
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["weather.skill"])
+
+    def test_legacy_constructor_kwarg_does_not_clobber_metadata(self):
+        ctx, _ = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       metadata={"skill_blacklist": ["from_meta"]},
+                       skill_blacklist=["from_kwarg"])
+        finally:
+            ctx.__exit__(None, None, None)
+        # explicit metadata wins
+        self.assertEqual(c.metadata["skill_blacklist"], ["from_meta"])
+
     def test_deserialize_empty_legacy_value_does_not_warn(self):
         ctx, caught = self._catch_warnings()
         try:

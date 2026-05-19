@@ -170,12 +170,15 @@ class Client:
             if legacy_key in client_data:
                 val = client_data.pop(legacy_key)
                 if val:
+                    # stacklevel=3 so the warning points past
+                    # deserialize() and cast2client() at the actual
+                    # user / DB-backend caller.
                     warnings.warn(
                         f"Client.{legacy_key} top-level field is deprecated; "
                         f"migrating into Client.metadata['{legacy_key}']. "
                         "Use Client.metadata directly or configure the "
                         "OVOSAgentPolicy plugin.",
-                        DeprecationWarning, stacklevel=2,
+                        DeprecationWarning, stacklevel=3,
                     )
                     metadata.setdefault(legacy_key, list(val))
 
