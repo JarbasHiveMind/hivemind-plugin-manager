@@ -58,15 +58,16 @@ class TestClient(unittest.TestCase):
         defaults.update(overrides)
         return Client(**defaults)
 
-    def test_defaults_populate_allowed_types(self):
+    def test_empty_allowed_types_stays_empty(self):
+        """Deny-by-default: no auto-populate, no auto-append."""
         c = self._make()
-        self.assertIn("recognizer_loop:utterance", c.allowed_types)
-        self.assertGreater(len(c.allowed_types), 1)
+        self.assertEqual(c.allowed_types, [])
 
-    def test_allowed_types_always_contains_utterance(self):
+    def test_explicit_allowed_types_preserved_exactly(self):
+        """No auto-append of recognizer_loop:utterance — operators
+        grant types explicitly."""
         c = self._make(allowed_types=["custom:event"])
-        self.assertIn("recognizer_loop:utterance", c.allowed_types)
-        self.assertIn("custom:event", c.allowed_types)
+        self.assertEqual(c.allowed_types, ["custom:event"])
 
     def test_post_init_rejects_non_int_client_id(self):
         with self.assertRaises(ValueError):
@@ -290,7 +291,16 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         c = Client(client_id=1, api_key="k")
         self.assertEqual(c.skill_blacklist, [])
         self.assertEqual(c.intent_blacklist, [])
-        self.assertEqual(c.message_blacklist, [])
+
+    def test_message_blacklist_property_removed(self):
+        """v0.6: ``Client.message_blacklist`` property was dropped because
+        hivemind-core has no consumer (whitelist-only model). The legacy
+        kwarg path still migrates the value into metadata for any
+        third-party plugin that wants it."""
+        c = Client(client_id=1, api_key="k",
+                   metadata={"message_blacklist": ["speak"]})
+        self.assertFalse(hasattr(type(c), "message_blacklist"))
+        self.assertEqual(c.metadata["message_blacklist"], ["speak"])
 
     def test_property_setter_writes_to_metadata_and_warns(self):
         c = Client(client_id=1, api_key="k")

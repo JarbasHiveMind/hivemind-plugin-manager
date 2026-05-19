@@ -69,16 +69,12 @@ class Client:
             raise ValueError("is_admin should be a boolean")
         if not isinstance(self.metadata, dict):
             self.metadata = {}
-        self.allowed_types = self.allowed_types or ["recognizer_loop:utterance",
-                                                    "recognizer_loop:record_begin",
-                                                    "recognizer_loop:record_end",
-                                                    "recognizer_loop:audio_output_start",
-                                                    "recognizer_loop:audio_output_end",
-                                                    'recognizer_loop:b64_transcribe',
-                                                    'speak:b64_audio',
-                                                    "ovos.common_play.SEI.get.response"]
-        if "recognizer_loop:utterance" not in self.allowed_types:
-            self.allowed_types.append("recognizer_loop:utterance")
+        # `allowed_types` is the canonical admission whitelist (enforced
+        # by ClientACLPolicy in hivemind-core). Deny-by-default: an empty
+        # list means the client cannot inject any message type. No
+        # default-substitution and no auto-append — operators grant
+        # access explicitly via `hivemind-core allow-msg <type> <id>`
+        # or by passing `allowed_types=[...]` on construction.
 
     # ------------------------------------------------------------------
     # Deprecated property shims — read/write to metadata transparently.
@@ -119,21 +115,13 @@ class Client:
         else:
             self.metadata.pop("intent_blacklist", None)
 
-    @property
-    def message_blacklist(self) -> List[str]:
-        return list(self.metadata.get("message_blacklist") or [])
-
-    @message_blacklist.setter
-    def message_blacklist(self, value):
-        warnings.warn(
-            "Client.message_blacklist setter is deprecated; write to "
-            "Client.metadata['message_blacklist'] instead.",
-            DeprecationWarning, stacklevel=2,
-        )
-        if value:
-            self.metadata["message_blacklist"] = list(value)
-        else:
-            self.metadata.pop("message_blacklist", None)
+    # message_blacklist property removed in v0.6 — hivemind-core is
+    # whitelist-only (deny by default) and has no consumer for an
+    # outbound message blacklist. Data passed as the legacy
+    # ``message_blacklist`` kwarg or top-level key in serialized records
+    # is still preserved in metadata for back-compat / third-party
+    # plugins that may consult it, but Client no longer exposes a
+    # top-level attribute for reading it.
 
     def serialize(self) -> str:
         """
