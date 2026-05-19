@@ -35,7 +35,7 @@ from __future__ import annotations
 import abc
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from hivemind_plugin_manager.protocols import _SubProtocol
 
@@ -137,7 +137,18 @@ class PolicyPlugin(_SubProtocol):
     exception in ``review`` / ``review_binary`` and treats it as
     ``Verdict.deny("policy_error", ...)`` (fail-closed, no operator
     knob). ``observe`` exceptions are logged and swallowed.
+
+    Class attributes (declared on the subclass, not the instance):
+
+    - :attr:`BYPASS_ADMIN`: if ``True``, this policy is skipped entirely
+      when ``client.is_admin`` is ``True``. Set this on policies that
+      enforce restrictions admins should be exempt from (whitelist
+      checks, agent-specific blacklists, session validation, etc.).
+      Default ``False`` — quotas, audit, rate-limiting and similar
+      policies should apply to admins too.
     """
+
+    BYPASS_ADMIN: ClassVar[bool] = False
 
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional["HiveMindListenerProtocol"] = None
