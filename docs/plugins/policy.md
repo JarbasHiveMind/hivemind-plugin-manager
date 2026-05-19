@@ -31,7 +31,6 @@ class PolicyPlugin(_SubProtocol):
     entry-point group and invoked in the order declared by the
     operator's policy.chain config.
     """
-    BYPASS_ADMIN: ClassVar[bool] = False
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None
 
@@ -46,48 +45,21 @@ Source: `hivemind_plugin_manager/policy.py:115`.
 (`protocols.py:35`), which provides `.identity`, `.database`, and
 `.clients` properties — see [Concepts](../concepts.md#_subprotocol-base).
 
-### `BYPASS_ADMIN`
+### `client.is_admin`
 
-A class-level boolean (`ClassVar[bool]`, default `False`) that controls
-whether the chain runner invokes this policy for **admin clients**
-(`client.is_admin == True`).
+`Client.is_admin` is **informational only**. The chain runner does not
+give it any special treatment — every policy is invoked for every
+client, admin or not.
 
-| Value | Effect on admin clients |
-|---|---|
-| `False` (default) | `review` / `review_binary` / `observe` are called normally. Admins are subject to this policy. |
-| `True` | The chain runner **skips this policy entirely** for admin clients — none of the three hooks fires. Non-admin clients are unaffected. |
+Policies that care about admin status check `client.is_admin`
+themselves inside `review` and decide what to do with it. Concrete
+example (the only one in the first-party ecosystem):
+`OVOSAgentPolicy` refuses messages with `session_id == "default"` for
+non-admins but lets admins through.
 
-The flag belongs on the class, not the instance — set it as a class
-attribute on your subclass:
-
-```python
-class MyOperatorOnlyAudit(PolicyPlugin):
-    BYPASS_ADMIN = False  # admins ARE audited (default, shown for clarity)
-
-    def observe(self, message, client):
-        ...
-
-class MyTenantQuota(PolicyPlugin):
-    BYPASS_ADMIN = True   # admins are exempt from quota checks
-
-    def review(self, message, client):
-        ...
-```
-
-**Use `BYPASS_ADMIN = True`** when the policy expresses a per-tenant
-or per-end-user constraint that operators legitimately need to
-sidestep (rate limits, content filters, A/B-test gating, sensitive-
-intent confirmation prompts).
-
-**Keep `BYPASS_ADMIN = False`** when the policy expresses an
-ecosystem-wide invariant that admins should also obey (allowed-type
-admission, audit logging, security scrubbing). The default is
-deliberately conservative.
-
-Enforcement happens in the chain runner (`hivemind-core`), not inside
-the policy itself — your subclass doesn't need to check
-`client.is_admin`. Just set the class attribute and let the runner
-handle the skip.
+There is no class-level `BYPASS_ADMIN` switch and no runner-level
+admin handling. If your policy should be a no-op for admins, branch
+on `client.is_admin` at the top of `review`.
 
 ---
 
