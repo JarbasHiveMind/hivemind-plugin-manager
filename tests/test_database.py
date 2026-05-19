@@ -58,15 +58,16 @@ class TestClient(unittest.TestCase):
         defaults.update(overrides)
         return Client(**defaults)
 
-    def test_defaults_populate_allowed_types(self):
+    def test_empty_allowed_types_stays_empty(self):
+        """Deny-by-default: no auto-populate, no auto-append."""
         c = self._make()
-        self.assertIn("recognizer_loop:utterance", c.allowed_types)
-        self.assertGreater(len(c.allowed_types), 1)
+        self.assertEqual(c.allowed_types, [])
 
-    def test_allowed_types_always_contains_utterance(self):
+    def test_explicit_allowed_types_preserved_exactly(self):
+        """No auto-append of recognizer_loop:utterance — operators
+        grant types explicitly."""
         c = self._make(allowed_types=["custom:event"])
-        self.assertIn("recognizer_loop:utterance", c.allowed_types)
-        self.assertIn("custom:event", c.allowed_types)
+        self.assertEqual(c.allowed_types, ["custom:event"])
 
     def test_post_init_rejects_non_int_client_id(self):
         with self.assertRaises(ValueError):
@@ -249,6 +250,173 @@ class TestAbstractRemoteDB(unittest.TestCase):
         db.add_item(Client(client_id=1, api_key="k", name="x"))
         self.assertEqual(len(db), 1)
         self.assertEqual(db.search_by_value("name", "x")[0].client_id, 1)
+
+
+class TestDeprecatedBlacklistShims(unittest.TestCase):
+    """Read/write back-compat for the legacy top-level blacklist fields.
+
+    Canonical storage is now ``Client.metadata``; legacy callers keep
+    working via property shims and the deserialize() migration path.
+    """
+
+    @staticmethod
+    def _catch_warnings():
+        import warnings
+        ctx = warnings.catch_warnings(record=True)
+        caught = ctx.__enter__()
+        warnings.simplefilter("always")
+        return ctx, caught
+
+    @staticmethod
+    def _assert_has_deprecation(caught, name: str):
+        msgs = [str(w.message) for w in caught
+                if issubclass(w.category, DeprecationWarning)]
+        assert any(name in m for m in msgs), (
+            f"expected a DeprecationWarning mentioning {name!r}; got {msgs}"
+        )
+
+    def test_property_getter_reads_from_metadata(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["weather.skill"]})
+        self.assertEqual(c.skill_blacklist, ["weather.skill"])
+
+    def test_property_getter_returns_snapshot(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["a"]})
+        out = c.skill_blacklist
+        out.append("b")  # mutating the snapshot must not affect metadata
+        self.assertEqual(c.metadata["skill_blacklist"], ["a"])
+
+    def test_property_getter_empty_when_missing(self):
+        c = Client(client_id=1, api_key="k")
+        self.assertEqual(c.skill_blacklist, [])
+        self.assertEqual(c.intent_blacklist, [])
+
+    def test_message_blacklist_kwarg_accepted_but_discarded(self):
+        """``message_blacklist`` is not part of the data model. The
+        kwarg is accepted to keep backends that pass it positionally
+        working, but the value is discarded with a DeprecationWarning
+        — no property, no metadata carry-forward."""
+        # No property at the class level.
+        self.assertFalse(hasattr(type(Client(client_id=1, api_key="k")),
+                                  "message_blacklist"))
+        # Constructor kwarg is accepted but emits a warning and
+        # discards the value — NOT carried into metadata.
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       message_blacklist=["speak"])
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "message_blacklist")
+        self.assertNotIn("message_blacklist", c.metadata)
+        # Caller-supplied metadata key is still stored untouched (it's
+        # just a dict — Client doesn't claim that key as special).
+        c2 = Client(client_id=1, api_key="k",
+                    metadata={"message_blacklist": ["speak"]})
+        self.assertEqual(c2.metadata["message_blacklist"], ["speak"])
+
+    def test_property_setter_writes_to_metadata_and_warns(self):
+        c = Client(client_id=1, api_key="k")
+        ctx, caught = self._catch_warnings()
+        try:
+            c.skill_blacklist = ["a", "b"]
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["a", "b"])
+
+    def test_property_setter_clears_when_empty(self):
+        c = Client(client_id=1, api_key="k",
+                   metadata={"skill_blacklist": ["a"]})
+        ctx, caught = self._catch_warnings()
+        try:
+            c.skill_blacklist = []
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertNotIn("skill_blacklist", c.metadata)
+
+    def test_deserialize_migrates_legacy_top_level_and_warns(self):
+        payload = {
+            "client_id": 1, "api_key": "k",
+            "skill_blacklist": ["s"],
+            "intent_blacklist": ["i"],
+            "message_blacklist": ["m"],  # dropped silently, no carry-forward
+        }
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client.deserialize(payload)
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self._assert_has_deprecation(caught, "intent_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["s"])
+        self.assertEqual(c.metadata["intent_blacklist"], ["i"])
+        # message_blacklist is removed outright: not carried into metadata
+        # and no DeprecationWarning emitted (it's not "deprecated" — it's
+        # gone, and silently dropping the key is the back-compat path).
+        self.assertNotIn("message_blacklist", c.metadata)
+
+    def test_deserialize_does_not_clobber_existing_metadata(self):
+        payload = {
+            "client_id": 1, "api_key": "k",
+            "skill_blacklist": ["legacy"],
+            "metadata": {"skill_blacklist": ["from_metadata"]},
+        }
+        ctx, _ = self._catch_warnings()
+        try:
+            c = Client.deserialize(payload)
+        finally:
+            ctx.__exit__(None, None, None)
+        # explicit metadata wins
+        self.assertEqual(c.metadata["skill_blacklist"], ["from_metadata"])
+
+    def test_deserialize_no_warning_when_no_legacy_keys(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client.deserialize({
+                "client_id": 1, "api_key": "k",
+                "metadata": {"skill_blacklist": ["x"]},
+            })
+        finally:
+            ctx.__exit__(None, None, None)
+        deprecations = [w for w in caught
+                        if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(deprecations, [])
+        self.assertEqual(c.skill_blacklist, ["x"])
+
+    def test_legacy_constructor_kwarg_migrates_and_warns(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       skill_blacklist=["weather.skill"])
+        finally:
+            ctx.__exit__(None, None, None)
+        self._assert_has_deprecation(caught, "skill_blacklist")
+        self.assertEqual(c.metadata["skill_blacklist"], ["weather.skill"])
+
+    def test_legacy_constructor_kwarg_does_not_clobber_metadata(self):
+        ctx, _ = self._catch_warnings()
+        try:
+            c = Client(client_id=1, api_key="k",
+                       metadata={"skill_blacklist": ["from_meta"]},
+                       skill_blacklist=["from_kwarg"])
+        finally:
+            ctx.__exit__(None, None, None)
+        # explicit metadata wins
+        self.assertEqual(c.metadata["skill_blacklist"], ["from_meta"])
+
+    def test_deserialize_empty_legacy_value_does_not_warn(self):
+        ctx, caught = self._catch_warnings()
+        try:
+            Client.deserialize({"client_id": 1, "api_key": "k",
+                                "skill_blacklist": []})
+        finally:
+            ctx.__exit__(None, None, None)
+        deprecations = [w for w in caught
+                        if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(deprecations, [])
 
 
 if __name__ == "__main__":

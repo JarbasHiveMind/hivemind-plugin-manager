@@ -1,7 +1,8 @@
 import abc
 import json
+import warnings
 from dataclasses import dataclass, field, fields
-from typing import List, Dict, Union, Any, Optional, Iterable
+from typing import List, Dict, Union, Any, ClassVar, Optional, Iterable
 
 
 ClientDict = Dict[str, Any]
@@ -39,9 +40,11 @@ class Client:
     description: str = ""
     is_admin: bool = False
     last_seen: float = -1
-    intent_blacklist: List[str] = field(default_factory=list)
-    skill_blacklist: List[str] = field(default_factory=list)
-    message_blacklist: List[str] = field(default_factory=list)
+    # admission whitelist of OVOS bus message types the client may inject.
+    # Empty list = deny everything (hivemind-core's policy is whitelist-only;
+    # there is no message blacklist). Agent-specific blacklists (skill,
+    # intent, etc.) live in plugin config or `metadata`, not on the
+    # Client row directly. See HiveMind-core#85.
     allowed_types: List[str] = field(default_factory=list)
     crypto_key: Optional[str] = None
     password: Optional[str] = None
@@ -51,8 +54,14 @@ class Client:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
-        """
-        Initializes the allowed types for the Client instance if not provided.
+        """Validate the Client.
+
+        OVOS-specific per-client ACL lists (skill / intent / message
+        blacklists) live in :attr:`metadata` now — see the property
+        shims below. Legacy callers that pass them as constructor
+        kwargs go through :meth:`deserialize` /
+        :meth:`ClientDatabase.add_client`, both of which detect and
+        migrate them. See HiveMind-core#85.
         """
         if not isinstance(self.client_id, int):
             raise ValueError("client_id should be an integer")
@@ -60,16 +69,57 @@ class Client:
             raise ValueError("is_admin should be a boolean")
         if not isinstance(self.metadata, dict):
             self.metadata = {}
-        self.allowed_types = self.allowed_types or ["recognizer_loop:utterance",
-                                                    "recognizer_loop:record_begin",
-                                                    "recognizer_loop:record_end",
-                                                    "recognizer_loop:audio_output_start",
-                                                    "recognizer_loop:audio_output_end",
-                                                    'recognizer_loop:b64_transcribe',
-                                                    'speak:b64_audio',
-                                                    "ovos.common_play.SEI.get.response"]
-        if "recognizer_loop:utterance" not in self.allowed_types:
-            self.allowed_types.append("recognizer_loop:utterance")
+        # `allowed_types` is the canonical admission whitelist (enforced
+        # by ClientACLPolicy in hivemind-core). Deny-by-default: an empty
+        # list means the client cannot inject any message type. No
+        # default-substitution and no auto-append — operators grant
+        # access explicitly via `hivemind-core allow-msg <type> <id>`
+        # or by passing `allowed_types=[...]` on construction.
+
+    # ------------------------------------------------------------------
+    # Deprecated property shims — read/write to metadata transparently.
+    # Older callers (CLI list-clients, OVOSAgentPolicy, third-party
+    # scripts) that use ``client.skill_blacklist`` keep working. New
+    # code should use ``client.metadata["skill_blacklist"]`` directly.
+    # ------------------------------------------------------------------
+
+    @property
+    def skill_blacklist(self) -> List[str]:
+        return list(self.metadata.get("skill_blacklist") or [])
+
+    @skill_blacklist.setter
+    def skill_blacklist(self, value):
+        warnings.warn(
+            "Client.skill_blacklist setter is deprecated; write to "
+            "Client.metadata['skill_blacklist'] instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+        if value:
+            self.metadata["skill_blacklist"] = list(value)
+        else:
+            self.metadata.pop("skill_blacklist", None)
+
+    @property
+    def intent_blacklist(self) -> List[str]:
+        return list(self.metadata.get("intent_blacklist") or [])
+
+    @intent_blacklist.setter
+    def intent_blacklist(self, value):
+        warnings.warn(
+            "Client.intent_blacklist setter is deprecated; write to "
+            "Client.metadata['intent_blacklist'] instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+        if value:
+            self.metadata["intent_blacklist"] = list(value)
+        else:
+            self.metadata.pop("intent_blacklist", None)
+
+    # message_blacklist is not part of the data model. No property
+    # shim and no metadata carry-forward; deserialize strips the
+    # top-level key silently, the kwarg path discards the value with
+    # a DeprecationWarning but the kwarg itself is accepted so
+    # backends passing it positionally don't crash.
 
     def serialize(self) -> str:
         """
@@ -97,6 +147,30 @@ class Client:
             client_data = dict(client_data)  # don't mutate caller's dict
 
         metadata = client_data.pop("metadata", None) or {}
+
+        # Auto-migrate legacy top-level blacklist fields into metadata so
+        # existing on-disk JSON DBs keep loading. Emits a one-time
+        # DeprecationWarning per legacy key seen. Don't clobber values
+        # already in metadata.
+        for legacy_key in ("skill_blacklist", "intent_blacklist"):
+            if legacy_key in client_data:
+                val = client_data.pop(legacy_key)
+                if val:
+                    # stacklevel=3 so the warning points past
+                    # deserialize() and cast2client() at the actual
+                    # user / DB-backend caller.
+                    warnings.warn(
+                        f"Client.{legacy_key} top-level field is deprecated; "
+                        f"migrating into Client.metadata['{legacy_key}']. "
+                        "Use Client.metadata directly or configure the "
+                        "OVOSAgentPolicy plugin.",
+                        DeprecationWarning, stacklevel=3,
+                    )
+                    metadata.setdefault(legacy_key, list(val))
+
+        # message_blacklist is not part of the data model; drop the
+        # key without carry-forward so on-disk records keep loading.
+        client_data.pop("message_blacklist", None)
 
         known = {f.name for f in fields(Client)}
         extras = {k: client_data.pop(k) for k in list(client_data) if k not in known}
@@ -164,6 +238,48 @@ class Client:
             A string representing the client.
         """
         return self.serialize()
+
+
+# Wrap the dataclass-generated __init__ so legacy constructor kwargs
+# (skill_blacklist, intent_blacklist) are accepted and auto-migrated
+# into metadata. Done as a post-class assignment because @property
+# attributes with the same name conflict with both dataclass field
+# annotations and InitVar pseudo-fields. ``message_blacklist`` is
+# accepted-and-discarded — see comment in
+# ``_client_init_with_legacy_kwargs``.
+_client_dataclass_init = Client.__init__
+
+
+def _client_init_with_legacy_kwargs(self, *args, skill_blacklist=None,
+                                     intent_blacklist=None,
+                                     message_blacklist=None, **kwargs):
+    # ``message_blacklist`` is accepted-and-discarded with a
+    # DeprecationWarning. The kwarg surface is preserved so backends
+    # passing it positionally still construct successfully; the value
+    # is dropped (no metadata carry-forward, no persistence).
+    _client_dataclass_init(self, *args, **kwargs)
+    for key, val in (("skill_blacklist", skill_blacklist),
+                     ("intent_blacklist", intent_blacklist)):
+        if val:
+            warnings.warn(
+                f"Client.{key} kwarg is deprecated; auto-migrating into "
+                f"Client.metadata['{key}']. Use Client.metadata directly "
+                "or configure the OVOSAgentPolicy plugin.",
+                DeprecationWarning, stacklevel=2,
+            )
+            self.metadata.setdefault(key, list(val))
+    if message_blacklist:
+        warnings.warn(
+            "Client.message_blacklist is REMOVED — the value passed "
+            "via this kwarg is being discarded. The field contradicted "
+            "the deny-by-default whitelist model and was never a real "
+            "admission gate. Stop passing this kwarg; it will be "
+            "rejected entirely in a future release.",
+            DeprecationWarning, stacklevel=2,
+        )
+
+
+Client.__init__ = _client_init_with_legacy_kwargs
 
 
 @dataclass
@@ -264,6 +380,28 @@ class AbstractDB(abc.ABC):
     def sync(self):
         """update db from disk if needed"""
         pass
+
+    # Schema version of the in-memory ``Client`` shape this code expects.
+    # Bumped when the on-disk representation changes in a way that
+    # warrants a backend migration. Backends compare this against their
+    # persisted version (e.g. SQLite ``PRAGMA user_version``, a sentinel
+    # key in JSON/Redis) and call ``migrate()`` once when stored < this.
+    SCHEMA_VERSION: ClassVar[int] = 2
+
+    def migrate(self, from_version: int) -> None:
+        """Backend-specific schema/data migration hook.
+
+        Called once during backend init when the persisted schema version
+        is lower than ``SCHEMA_VERSION``. Default is a no-op so existing
+        third-party backends keep working without modification; backends
+        that store legacy fields (``skill_blacklist``, ``intent_blacklist``,
+        ``message_blacklist`` as top-level columns/keys) should override
+        this to move them into ``Client.metadata`` and drop the legacy
+        storage. Implementations MUST be idempotent and crash-safe — a
+        partial migration on retry must produce the same final state.
+
+        v1 -> v2: legacy OVOS blacklist fields migrated into metadata.
+        """
 
     def commit(self) -> bool:
         """
