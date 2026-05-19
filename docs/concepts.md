@@ -64,7 +64,7 @@ Return value is `{plugin_name: class}`.
 
 Key behaviours:
 
-- Passing `None` iterates **all four** entry-point groups and merges the results.
+- Passing `None` iterates **all five** entry-point groups (database, agent protocol, network protocol, binary protocol, policy) and merges the results.
 - Passing a string (e.g. `"hivemind.database"`) is also accepted.
 - If a plugin's `load()` raises, the error is logged once and the entry point is skipped;
   the dict simply will not contain that name. This is the **error-swallowing** behaviour

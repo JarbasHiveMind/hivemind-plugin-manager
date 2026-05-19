@@ -9,6 +9,28 @@ from hivemind_plugin_manager.protocols import (AgentProtocol,
                                                BinaryDataHandlerProtocol,
                                                NetworkProtocol)
 
+# Public re-exports — ``Mutation`` and ``Verdict`` are only referenced
+# via this module by downstream plugin authors, so the imports above
+# look unused to a flake8/ruff F401 pass. Listing them here marks them
+# as the package's public surface and silences the warning.
+__all__ = [
+    "AbstractDB",
+    "AbstractRemoteDB",
+    "AgentProtocol",
+    "AgentProtocolFactory",
+    "BinaryDataHandlerProtocol",
+    "BinaryDataHandlerProtocolFactory",
+    "DatabaseFactory",
+    "HiveMindPluginTypes",
+    "Mutation",
+    "NetworkProtocol",
+    "NetworkProtocolFactory",
+    "PolicyPlugin",
+    "PolicyPluginFactory",
+    "Verdict",
+    "find_plugins",
+]
+
 
 class HiveMindPluginTypes(str, enum.Enum):
     DATABASE = "hivemind.database"

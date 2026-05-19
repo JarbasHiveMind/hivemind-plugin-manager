@@ -1,7 +1,7 @@
 # HiveMind Plugin Manager — Documentation
 
 HiveMind Plugin Manager (HPM) is the extension point system for the HiveMind ecosystem.
-It defines four plugin types (database, agent protocol, network protocol, binary protocol),
+It defines five plugin types (database, agent protocol, network protocol, binary protocol, policy),
 discovers implementations registered via setuptools entry points, and provides factory classes
 for instantiation.
 
