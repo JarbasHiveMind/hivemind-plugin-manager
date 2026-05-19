@@ -133,14 +133,17 @@ Typed actions a policy can request on a message being allowed.
 the agent plugin that knows the message shape. The OVOS agent plugin,
 for example, ships:
 
-| Class | Effect | Where |
-|---|---|---|
-| `AddBlacklistedSkill(skill_id)` | Appends to `message.context["session"]["blacklisted_skills"]`. | [`hivemind_ovos_agent_plugin.policy`](https://github.com/JarbasHiveMind/hivemind-ovos-agent-plugin) |
-| `AddBlacklistedIntent(intent_name)` | Appends to `message.context["session"]["blacklisted_intents"]`. | same |
-| `AddBlacklistedMessageType(msg_type)` | Appends to `message.context["session"]["blacklisted_message_types"]`. | same |
-| `SetSessionField(key, value)` | Sets one key in `message.context["session"]`. | same |
-| `SetContextField(path, value)` | Sets a nested key in `message.context` (tuple-typed path). | same |
-| `RewriteUtterance(text)` | Replaces `data["utterances"]` on a `recognizer_loop:utterance` message. | same |
+| Class | Effect |
+|---|---|
+| `AddBlacklistedSkill(skill_id)` | Appends to `message.context["session"]["blacklisted_skills"]`. |
+| `AddBlacklistedIntent(intent_name)` | Appends to `message.context["session"]["blacklisted_intents"]`. |
+| `SetSessionField(key, value)` | Sets one key in `message.context["session"]`. |
+| `SetContextField(path, value)` | Sets a nested key in `message.context` (tuple-typed path). |
+| `RewriteUtterance(text)` | Replaces `data["utterances"]` on a `recognizer_loop:utterance` message. |
+
+All of these live in
+[`hivemind_ovos_agent_plugin.policy`](https://github.com/JarbasHiveMind/hivemind-ovos-agent-plugin)
+— see that repo for current behaviour, signatures, and edge cases.
 
 If you write an agent integration for something other than OVOS (e.g. a
 non-Mycroft skill engine), bring your own mutation set. The contract is

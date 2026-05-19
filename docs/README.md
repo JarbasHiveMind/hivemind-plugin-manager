@@ -28,16 +28,20 @@ for instantiation.
 
 | Class | Plugin type | Source |
 |---|---|---|
-| `HiveMindPluginTypes` | enum of entry-point group names | `hivemind_plugin_manager/__init__.py:10` |
-| `DatabaseFactory` | creates `AbstractDB` / `AbstractRemoteDB` instances | `hivemind_plugin_manager/__init__.py:17` |
-| `AgentProtocolFactory` | creates `AgentProtocol` instances | `hivemind_plugin_manager/__init__.py:38` |
-| `NetworkProtocolFactory` | creates `NetworkProtocol` instances | `hivemind_plugin_manager/__init__.py:56` |
-| `BinaryDataHandlerProtocolFactory` | creates `BinaryDataHandlerProtocol` instances | `hivemind_plugin_manager/__init__.py:73` |
-| `find_plugins()` | discovers all installed plugins for a type | `hivemind_plugin_manager/__init__.py:108` |
-| `Client` | dataclass representing a connected device/credential | `hivemind_plugin_manager/database.py:35` |
-| `AbstractDB` | base class for local database plugins | `hivemind_plugin_manager/database.py:158` |
-| `AbstractRemoteDB` | base class for remote database plugins | `hivemind_plugin_manager/database.py:266` |
+| `HiveMindPluginTypes` | enum of entry-point group names | `hivemind_plugin_manager/__init__.py:13` |
+| `DatabaseFactory` | creates `AbstractDB` / `AbstractRemoteDB` instances | `hivemind_plugin_manager/__init__.py:21` |
+| `AgentProtocolFactory` | creates `AgentProtocol` instances | `hivemind_plugin_manager/__init__.py:42` |
+| `NetworkProtocolFactory` | creates `NetworkProtocol` instances | `hivemind_plugin_manager/__init__.py:60` |
+| `BinaryDataHandlerProtocolFactory` | creates `BinaryDataHandlerProtocol` instances | `hivemind_plugin_manager/__init__.py:77` |
+| `PolicyPluginFactory` | creates `PolicyPlugin` instances | `hivemind_plugin_manager/__init__.py:96` |
+| `find_plugins()` | discovers all installed plugins for a type | `hivemind_plugin_manager/__init__.py` |
+| `Client` | dataclass representing a connected device/credential | `hivemind_plugin_manager/database.py:36` |
+| `AbstractDB` | base class for local database plugins | `hivemind_plugin_manager/database.py:300` |
+| `AbstractRemoteDB` | base class for remote database plugins | `hivemind_plugin_manager/database.py:431` |
 | `AgentProtocol` | base class for agent protocol plugins | `hivemind_plugin_manager/protocols.py:61` |
 | `NetworkProtocol` | base class for network protocol plugins | `hivemind_plugin_manager/protocols.py:70` |
 | `BinaryDataHandlerProtocol` | base class for binary protocol plugins | `hivemind_plugin_manager/protocols.py:88` |
+| `PolicyPlugin` | base class for admission-control policy plugins | `hivemind_plugin_manager/policy.py:116` |
+| `Verdict` | return value of `PolicyPlugin.review(_binary)` | `hivemind_plugin_manager/policy.py:74` |
+| `Mutation` | abstract base for typed message mutations | `hivemind_plugin_manager/policy.py:47` |
 | `ClientCallbacks` | dataclass of lifecycle hooks | `hivemind_plugin_manager/protocols.py:27` |

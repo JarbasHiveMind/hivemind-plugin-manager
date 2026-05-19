@@ -25,13 +25,13 @@ Each value is the setuptools entry-point group string used for plugin discovery.
 
 ### `find_plugins(plug_type=None) -> dict`
 
-Source: `hivemind_plugin_manager/__init__.py:108`
+Source: `hivemind_plugin_manager/__init__.py:136`
 
 Discovers all installed plugins matching `plug_type`.
 
 | Argument | Type | Behaviour |
 |---|---|---|
-| `None` | — | iterates all four `HiveMindPluginTypes` groups, merges results |
+| `None` | — | iterates every `HiveMindPluginTypes` group, merges results |
 | `HiveMindPluginTypes` member | enum | iterates that one group |
 | `str` | raw entry-point group name | iterates that group |
 
@@ -39,65 +39,65 @@ Returns `{plugin_name: class}`.
 
 Entry-point load failures are caught, logged once, and skipped. Already-errored entry
 points are stored in `find_plugins._errored` (a module-level list) to suppress repeated
-log noise. Source: `hivemind_plugin_manager/__init__.py:132`
+log noise.
 
 ---
 
 ### `DatabaseFactory`
 
-Source: `hivemind_plugin_manager/__init__.py:17`
+Source: `hivemind_plugin_manager/__init__.py:21`
 
 #### `DatabaseFactory.get_class(plugin_name: str) -> Type[AbstractDB]`
 
 Returns the class registered under `plugin_name` in `hivemind.database`.
-Raises `KeyError` if not found. Source: `__init__.py:19`
+Raises `KeyError` if not found. Source: `__init__.py:23`
 
 #### `DatabaseFactory.create(plugin_name, name="clients", subfolder="hivemind-core", password=None, host=None, port=None) -> Union[AbstractDB, AbstractRemoteDB]`
 
 Instantiates the plugin. If the class is a subclass of `AbstractRemoteDB`, `host` and
-`port` are forwarded; otherwise they are dropped. Source: `__init__.py:26`
+`port` are forwarded; otherwise they are dropped. Source: `__init__.py:30`
 
 ---
 
 ### `AgentProtocolFactory`
 
-Source: `hivemind_plugin_manager/__init__.py:38`
+Source: `hivemind_plugin_manager/__init__.py:42`
 
 #### `AgentProtocolFactory.get_class(plugin_name: str) -> Type[AgentProtocol]`
 
-Raises `KeyError` if not found. Source: `__init__.py:40`
+Raises `KeyError` if not found. Source: `__init__.py:44`
 
 #### `AgentProtocolFactory.create(plugin_name, config=None, bus=None, hm_protocol=None) -> AgentProtocol`
 
-`config` defaults to `{}` when `None`. Source: `__init__.py:47`
+`config` defaults to `{}` when `None`. Source: `__init__.py:51`
 
 ---
 
 ### `NetworkProtocolFactory`
 
-Source: `hivemind_plugin_manager/__init__.py:56`
+Source: `hivemind_plugin_manager/__init__.py:60`
 
 #### `NetworkProtocolFactory.get_class(plugin_name: str) -> Type[NetworkProtocol]`
 
-Raises `KeyError` if not found. Source: `__init__.py:58`
+Raises `KeyError` if not found. Source: `__init__.py:62`
 
 #### `NetworkProtocolFactory.create(plugin_name, config=None, hm_protocol=None) -> NetworkProtocol`
 
-`config` defaults to `{}` when `None`. Source: `__init__.py:64`
+`config` defaults to `{}` when `None`. Source: `__init__.py:69`
 
 ---
 
 ### `BinaryDataHandlerProtocolFactory`
 
-Source: `hivemind_plugin_manager/__init__.py:73`
+Source: `hivemind_plugin_manager/__init__.py:77`
 
 #### `BinaryDataHandlerProtocolFactory.get_class(plugin_name: str) -> Type[BinaryDataHandlerProtocol]`
 
-Raises `KeyError` if not found. Source: `__init__.py:76`
+Raises `KeyError` if not found. Source: `__init__.py:80`
 
 #### `BinaryDataHandlerProtocolFactory.create(plugin_name, config=None, hm_protocol=None, agent_protocol=None) -> BinaryDataHandlerProtocol`
 
-`config` defaults to `{}` when `None`. Source: `__init__.py:83`
+`config` defaults to `{}` when `None`. Source: `__init__.py:87`
 
 ---
 
@@ -165,11 +165,11 @@ and folds any other unknown top-level keys from older records the same way; an e
 | Method | Signature | Source |
 |---|---|---|
 | `serialize()` | `-> str` (JSON) | `database.py:126` |
-| `deserialize(data)` | `staticmethod(str \| dict) -> Client` | `database.py:135` |
-| `__getitem__(key)` | `-> Any`; raises `KeyError` | `database.py:180` |
-| `__setitem__(key, val)` | raises `ValueError` on unknown key | `database.py:197` |
-| `__eq__(other)` | compares serialized JSON | `database.py:213` |
-| `__repr__()` | returns `serialize()` | `database.py:231` |
+| `deserialize(data)` | `staticmethod(str \| dict) -> Client` | `database.py:136` |
+| `__getitem__(key)` | `-> Any`; raises `KeyError` | `database.py:189` |
+| `__setitem__(key, val)` | raises `ValueError` on unknown key | `database.py:206` |
+| `__eq__(other)` | compares serialized JSON | `database.py:222` |
+| `__repr__()` | returns `serialize()` | `database.py:240` |
 
 ---
 
@@ -184,7 +184,7 @@ Normalises `None`, `Client`, JSON string, dict, or list into `Client` instances.
 
 ### `AbstractDB`
 
-Source: `hivemind_plugin_manager/database.py:269`
+Source: `hivemind_plugin_manager/database.py:300`
 
 ```python
 @dataclass
@@ -192,25 +192,31 @@ class AbstractDB(abc.ABC):
     name: str = "clients"
     subfolder: str = "hivemind-core"
     password: Optional[str] = None
+
+    SCHEMA_VERSION: ClassVar[int] = 2  # bumped 2024-05 for legacy-blacklist purge
 ```
 
 | Method | Abstract | Signature | Source |
 |---|---|---|---|
-| `add_item` | yes | `(client: Client) -> bool` | `database.py:169` |
-| `search_by_value` | yes | `(key: str, val) -> List[Client]` | `database.py:221` |
-| `__len__` | yes | `() -> int` | `database.py:234` |
-| `__iter__` | yes | `() -> Iterable[Client]` | `database.py:243` |
-| `delete_item` | no | `(client) -> bool` — tombstone pattern | `database.py:181` |
-| `update_item` | no | `(client) -> bool` — calls `add_item` | `database.py:195` |
-| `replace_item` | no | `(old, new) -> bool` | `database.py:207` |
-| `sync` | no | `()` — no-op | `database.py:252` |
-| `commit` | no | `() -> True` | `database.py:256` |
+| `add_item` | yes | `(client: Client) -> bool` | `database.py:312` |
+| `search_by_value` | yes | `(key: str, val) -> List[Client]` | `database.py:364` |
+| `__len__` | yes | `() -> int` | `database.py:377` |
+| `__iter__` | yes | `() -> Iterable[Client]` | `database.py:386` |
+| `delete_item` | no | `(client) -> bool` — tombstone pattern | `database.py:323` |
+| `update_item` | no | `(client) -> bool` — calls `add_item` | `database.py:337` |
+| `replace_item` | no | `(old, new) -> bool` | `database.py:349` |
+| `sync` | no | `()` — no-op | `database.py:394` |
+| `migrate` | no | `(from_version: int) -> None` — schema migration hook (default no-op); backends override for their persisted on-disk shape | `database.py:405` |
+| `commit` | no | `() -> True` | `database.py:420` |
+
+See [Concepts → Database Schema Migration](concepts.md#database-schema-migration)
+for the `SCHEMA_VERSION` + `migrate()` contract.
 
 ---
 
 ### `AbstractRemoteDB`
 
-Source: `hivemind_plugin_manager/database.py:378`
+Source: `hivemind_plugin_manager/database.py:431`
 
 Extends `AbstractDB` with:
 

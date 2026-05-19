@@ -147,9 +147,10 @@ Notable rules enforced in `__post_init__` (`database.py:56`):
 - `client_id` must be `int` — raises `ValueError` otherwise.
 - `is_admin` must be `bool` — raises `ValueError` otherwise.
 - `allowed_types` is **not** pre-populated. An empty list means the client cannot inject
-  any message type (deny-by-default). Operators grant access explicitly via
-  `hivemind-core allow-msg <type> <id>` or by passing `allowed_types=[...]` on
-  construction. See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85).
+  any message type (deny-by-default). The consumer that enforces this (typically
+  `hivemind-core`) decides how operators grant access — HPM only owns the data shape.
+  See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85)
+  for the admission-chain design that consumes this field.
 
 `skill_blacklist` and `intent_blacklist` are **deprecated property shims** (`database.py:86`,
 `database.py:102`) that read and write `Client.metadata["skill_blacklist"]` /
