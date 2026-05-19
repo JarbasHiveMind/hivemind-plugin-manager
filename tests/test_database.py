@@ -419,5 +419,38 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(deprecations, [])
 
 
+class TestAbstractDBRefresh(unittest.TestCase):
+    def test_refresh_returns_client_via_default_lookup(self):
+        db = _InMemoryDB()
+        db.add_item(Client(client_id=7, api_key="k", name="bob"))
+        got = db.refresh(7)
+        self.assertIsNotNone(got)
+        self.assertEqual(got.client_id, 7)
+
+    def test_refresh_returns_none_for_missing_id(self):
+        db = _InMemoryDB()
+        self.assertIsNone(db.refresh(99))
+
+    def test_refresh_none_id_returns_none(self):
+        db = _InMemoryDB()
+        self.assertIsNone(db.refresh(None))
+
+
+class TestAbstractDBForwardCompat(unittest.TestCase):
+    def test_forward_compat_raises_for_newer_schema(self):
+        db = _InMemoryDB()
+        with self.assertRaises(RuntimeError) as ctx:
+            db._check_forward_compat(999)
+        self.assertIn("999", str(ctx.exception))
+        self.assertIn("newer", str(ctx.exception))
+
+    def test_forward_compat_ok_for_equal_or_older(self):
+        db = _InMemoryDB()
+        target = getattr(_InMemoryDB, "SCHEMA_VERSION", 1)
+        # No exception expected.
+        db._check_forward_compat(target)
+        db._check_forward_compat(target - 1)
+
+
 if __name__ == "__main__":
     unittest.main()

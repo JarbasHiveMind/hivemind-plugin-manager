@@ -381,6 +381,48 @@ class AbstractDB(abc.ABC):
         """update db from disk if needed"""
         pass
 
+    def refresh(self, client_id: int) -> Optional['Client']:
+        """Refresh a single client record from the backing store.
+
+        Backends override for targeted invalidation; the default just
+        re-reads via :meth:`get_client_by_id`. Implementations MUST NOT
+        trigger a global keyspace scan or index rebuild — this is called
+        on the hot admission path, once per inbound message.
+        """
+        return self.get_client_by_id(client_id)
+
+    def get_client_by_id(self, client_id: int) -> Optional['Client']:
+        """Return the client with the given ``client_id`` or ``None``.
+
+        Default implementation uses :meth:`search_by_value` so backends
+        get a working lookup for free. Backends with a faster path
+        (direct key get, indexed lookup) should override.
+        """
+        if client_id is None:
+            return None
+        try:
+            matches = self.search_by_value("client_id", int(client_id))
+        except (TypeError, ValueError):
+            return None
+        return matches[0] if matches else None
+
+    def _check_forward_compat(self, stored_version: int) -> None:
+        """Raise ``RuntimeError`` if the stored schema version is newer
+        than this backend supports.
+
+        Backends call this from ``_maybe_migrate`` immediately after
+        reading their persisted version sentinel, before the
+        ``stored < target`` migration branch. Forward-incompatible DBs
+        must fail loudly instead of being silently downgraded.
+        """
+        target = getattr(type(self), "SCHEMA_VERSION", 1)
+        if stored_version > target:
+            raise RuntimeError(
+                f"Database schema version {stored_version} is newer than "
+                f"this backend supports (target={target}). Upgrade "
+                f"hivemind-plugin-manager / the backend plugin."
+            )
+
     # Schema version of the in-memory ``Client`` shape this code expects.
     # Bumped when the on-disk representation changes in a way that
     # warrants a backend migration. Backends compare this against their

@@ -41,14 +41,6 @@ from typing import Any, Dict, List, Optional, Union
 from hivemind_plugin_manager.protocols import _SubProtocol
 
 
-# Reserved key on ``message.context`` used by policy plugins to share a
-# single resolved-client lookup across the chain. ``MessageTypeACLPolicy``
-# (always first) stashes the DB row here; downstream policies read it
-# instead of issuing their own DB query. Module-level constant so all
-# consumers agree on the spelling.
-RESOLVED_CLIENT_CTX_KEY = "_resolved_client"
-
-
 class DenyCodes(str, Enum):
     """Stable machine-readable deny codes returned in :class:`Verdict`.
 
@@ -207,5 +199,4 @@ __all__ = [
     "Verdict",
     "Mutation",
     "DenyCodes",
-    "RESOLVED_CLIENT_CTX_KEY",
 ]
