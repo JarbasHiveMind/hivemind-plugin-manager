@@ -183,6 +183,41 @@ signalling an upstream serializer bug via a missing-key outcome rather than a cr
 
 ---
 
+## Database Schema Migration
+
+`AbstractDB` declares a `SCHEMA_VERSION: ClassVar[int]` constant (currently
+`2`) and a non-abstract `migrate(self, from_version: int)` hook
+(`database.py:368`). The default implementation is a no-op; backends opt in
+by overriding it.
+
+**Contract for backend authors:**
+
+1. Persist the current schema version somewhere backend-native — `PRAGMA
+   user_version` for SQLite, a sentinel key (`hivemind:schema_version`) for
+   Redis, a top-level `__schema_version__` field for JSON files, etc.
+2. At backend init (typically `__post_init__`), read the persisted version;
+   if it is lower than `AbstractDB.SCHEMA_VERSION`, call
+   `self.migrate(from_version=stored)` and then write the new version.
+3. `migrate()` MUST be **idempotent and crash-safe**. A partial migration
+   interrupted by a crash must produce the same final state when re-run.
+
+**Migration matrix:**
+
+| from → to | What the backend must do |
+|---|---|
+| `1 → 2` | Move legacy top-level OVOS blacklist fields (`skill_blacklist`, `intent_blacklist`, `message_blacklist`) into each `Client.metadata` dict (`setdefault` — never clobber an explicit metadata value), then drop the legacy storage. The `Client.metadata` shape is `{"skill_blacklist": [...], "intent_blacklist": [...], "message_blacklist": [...]}`. |
+
+The legacy field names map 1:1 to keys under `metadata` — this is what the
+`Client.skill_blacklist` etc. property shims read from
+(`database.py:87`–`140`).
+
+Existing third-party backends that don't override `migrate()` continue to
+work — they just won't clean up legacy on-disk shape. The
+`@property` shims on `Client` ensure read-path code keeps functioning
+regardless of whether migration has run.
+
+---
+
 ## `_SubProtocol` Base
 
 All three protocol base classes (`AgentProtocol`, `NetworkProtocol`,
