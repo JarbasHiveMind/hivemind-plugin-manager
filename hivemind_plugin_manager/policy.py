@@ -35,9 +35,32 @@ from __future__ import annotations
 import abc
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 from hivemind_plugin_manager.protocols import _SubProtocol
+
+
+# Reserved key on ``message.context`` used by policy plugins to share a
+# single resolved-client lookup across the chain. ``MessageTypeACLPolicy``
+# (always first) stashes the DB row here; downstream policies read it
+# instead of issuing their own DB query. Module-level constant so all
+# consumers agree on the spelling.
+RESOLVED_CLIENT_CTX_KEY = "_resolved_client"
+
+
+class DenyCodes(str, Enum):
+    """Stable machine-readable deny codes returned in :class:`Verdict`.
+
+    Stringly typed via ``str`` mixin so existing code comparing against
+    plain strings keeps working. Use ``DenyCodes.X.value`` or pass the
+    member directly to :meth:`Verdict.deny`.
+    """
+
+    POLICY_ERROR = "policy_error"
+    POLICY_CHAIN_UNAVAILABLE = "policy_chain_unavailable"
+    ACL_DISALLOWED_TYPE = "acl_disallowed_type"
+    SESSION_ID_DEFAULT_FORBIDDEN = "session_id_default_forbidden"
 
 
 # ---------------------------------------------------------------------------
@@ -54,14 +77,21 @@ class Mutation(abc.ABC):
     """
 
     @abc.abstractmethod
-    def apply(self, message, client) -> None:
-        """Mutate ``message`` in place. ``client`` is the
-        ``HiveMindClientConnection`` that originated the message, supplied
-        so mutations can read identity / session state if needed.
+    def apply(self, message, client) -> "Optional[Any]":
+        """Mutate ``message`` and return either ``None`` (in-place mutation)
+        or a replacement ``Message`` the chain runner should use going
+        forward. ``client`` is the ``HiveMindClientConnection`` that
+        originated the message, supplied so mutations can read identity /
+        session state if needed.
 
-        Implementations must be best-effort: an exception here is logged
-        and skipped by the chain runner, so individual mutation failures
-        don't kill the whole admission step.
+        Returning ``None`` is the common case — mutate in place and let
+        the chain continue with the same ``Message`` instance. Returning
+        a non-None value lets a mutation swap the message wholesale
+        (e.g. wrapping it in a new envelope) without callers having to
+        special-case that pattern.
+
+        Implementations must be best-effort: an exception here is treated
+        by the chain runner as a deny with code ``policy_error``.
         """
         raise NotImplementedError
 
@@ -96,7 +126,7 @@ class Verdict:
         return cls(mutations=list(mutations))
 
     @classmethod
-    def deny(cls, code: str, reason: str = "", **data: Any) -> "Verdict":
+    def deny(cls, code: "Union[str, DenyCodes]", reason: str = "", **data: Any) -> "Verdict":
         """Construct a deny-verdict.
 
         ``code`` is a stable machine-readable string
@@ -105,7 +135,8 @@ class Verdict:
         arguments are forwarded into ``data`` for the client-side
         denial message.
         """
-        return cls(denied=True, code=code, reason=reason, data=dict(data))
+        code_str = code.value if isinstance(code, DenyCodes) else str(code)
+        return cls(denied=True, code=code_str, reason=reason, data=dict(data))
 
 
 # ---------------------------------------------------------------------------
@@ -175,4 +206,6 @@ __all__ = [
     "PolicyPlugin",
     "Verdict",
     "Mutation",
+    "DenyCodes",
+    "RESOLVED_CLIENT_CTX_KEY",
 ]

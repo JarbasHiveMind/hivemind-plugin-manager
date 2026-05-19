@@ -70,7 +70,7 @@ class Client:
         if not isinstance(self.metadata, dict):
             self.metadata = {}
         # `allowed_types` is the canonical admission whitelist (enforced
-        # by ClientACLPolicy in hivemind-core). Deny-by-default: an empty
+        # by MessageTypeACLPolicy in hivemind-core). Deny-by-default: an empty
         # list means the client cannot inject any message type. No
         # default-substitution and no auto-append — operators grant
         # access explicitly via `hivemind-core allow-msg <type> <id>`
