@@ -293,11 +293,10 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(c.intent_blacklist, [])
 
     def test_message_blacklist_kwarg_accepted_but_discarded(self):
-        """message_blacklist was a design mistake from 2024-12-20
-        (commit 94a2141) — no property and no carry-forward. The kwarg
-        is still ACCEPTED (not TypeError) so already-shipped backends
-        passing it positionally don't crash on partial HPM upgrades.
-        The value is discarded with a DeprecationWarning."""
+        """``message_blacklist`` is not part of the data model. The
+        kwarg is accepted to keep backends that pass it positionally
+        working, but the value is discarded with a DeprecationWarning
+        — no property, no metadata carry-forward."""
         # No property at the class level.
         self.assertFalse(hasattr(type(Client(client_id=1, api_key="k")),
                                   "message_blacklist"))

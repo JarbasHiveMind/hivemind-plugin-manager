@@ -115,13 +115,11 @@ class Client:
         else:
             self.metadata.pop("intent_blacklist", None)
 
-    # message_blacklist is gone — the field was introduced 2024-12-20
-    # in commit 94a2141 alongside the rename/multidb refactor and
-    # contradicted the deny-by-default whitelist model. No property
-    # shim and no carry-forward (deserialize strips the top-level key
-    # silently, the kwarg path discards the value with a
-    # DeprecationWarning). The kwarg is still ACCEPTED to keep
-    # partial-upgrade safety with already-shipped backends.
+    # message_blacklist is not part of the data model. No property
+    # shim and no metadata carry-forward; deserialize strips the
+    # top-level key silently, the kwarg path discards the value with
+    # a DeprecationWarning but the kwarg itself is accepted so
+    # backends passing it positionally don't crash.
 
     def serialize(self) -> str:
         """
@@ -170,13 +168,8 @@ class Client:
                     )
                     metadata.setdefault(legacy_key, list(val))
 
-        # message_blacklist was a design mistake from the 2024-12-20
-        # rename/multidb refactor — it contradicted the deny-by-default
-        # whitelist model and never functioned as a real gate. Strip it
-        # silently from on-disk records so legacy DBs keep loading.
-        # Operators who configured it can recover their list from the
-        # backend's pre-migration storage if needed; no automatic
-        # carry-forward.
+        # message_blacklist is not part of the data model; drop the
+        # key without carry-forward so on-disk records keep loading.
         client_data.pop("message_blacklist", None)
 
         known = {f.name for f in fields(Client)}
@@ -251,8 +244,8 @@ class Client:
 # (skill_blacklist, intent_blacklist) are accepted and auto-migrated
 # into metadata. Done as a post-class assignment because @property
 # attributes with the same name conflict with both dataclass field
-# annotations and InitVar pseudo-fields. ``message_blacklist`` is also
-# accepted-and-discarded for partial-upgrade safety — see comment in
+# annotations and InitVar pseudo-fields. ``message_blacklist`` is
+# accepted-and-discarded — see comment in
 # ``_client_init_with_legacy_kwargs``.
 _client_dataclass_init = Client.__init__
 
@@ -260,17 +253,10 @@ _client_dataclass_init = Client.__init__
 def _client_init_with_legacy_kwargs(self, *args, skill_blacklist=None,
                                      intent_blacklist=None,
                                      message_blacklist=None, **kwargs):
-    # message_blacklist is REMOVED from the data model — the field was
-    # introduced 2024-12-20 (commit 94a2141) alongside the legitimate
-    # ACL work but contradicted the deny-by-default whitelist model and
-    # never functioned as a real gate.
-    #
-    # The kwarg is still accepted (rather than raising TypeError) so
-    # already-shipped backends — most notably the pre-release SQLite
-    # plugin's _row_to_client, which passes ``message_blacklist=`` as
-    # a positional from each row — don't crash when users upgrade HPM
-    # alone. The value is discarded with a one-shot DeprecationWarning
-    # per call: no metadata carry-forward, no silent persistence.
+    # ``message_blacklist`` is accepted-and-discarded with a
+    # DeprecationWarning. The kwarg surface is preserved so backends
+    # passing it positionally still construct successfully; the value
+    # is dropped (no metadata carry-forward, no persistence).
     _client_dataclass_init(self, *args, **kwargs)
     for key, val in (("skill_blacklist", skill_blacklist),
                      ("intent_blacklist", intent_blacklist)):

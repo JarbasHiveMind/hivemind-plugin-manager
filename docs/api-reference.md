@@ -149,12 +149,10 @@ appended. See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core
 **Deprecated property shims** — `skill_blacklist` and `intent_blacklist` are read/write
 properties (`database.py:86`, `database.py:102`) backed by `Client.metadata`. Setting
 them emits `DeprecationWarning`; new code should write to `Client.metadata` directly.
-`message_blacklist` was removed from the data model (no property, no carry-forward). It
-was introduced 2024-12-20 in commit `94a2141` alongside the rename/multidb refactor but
-contradicted the deny-by-default whitelist model and never functioned as a real gate.
-The constructor kwarg is still accepted (for partial-upgrade safety with already-shipped
-backends) but the value is discarded with a `DeprecationWarning`; `deserialize` strips
-the key silently from on-disk records.
+`message_blacklist` is not part of the data model: no property, no metadata
+carry-forward. The constructor kwarg is accepted-and-discarded with a
+`DeprecationWarning`, and `deserialize` strips the top-level key silently from on-disk
+records.
 
 **`metadata`** — free-form per-client dict for plugin-specific context. `deserialize`
 migrates legacy top-level blacklist keys into `metadata` automatically (`database.py:153`)
