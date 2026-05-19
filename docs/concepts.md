@@ -2,7 +2,7 @@
 
 ## Plugin Types
 
-HPM defines four plugin types as string-valued enum members.
+HPM defines five plugin types as string-valued enum members.
 
 ```python
 class HiveMindPluginTypes(str, enum.Enum):
@@ -10,9 +10,10 @@ class HiveMindPluginTypes(str, enum.Enum):
     NETWORK_PROTOCOL = "hivemind.network.protocol"
     AGENT_PROTOCOL   = "hivemind.agent.protocol"
     BINARY_PROTOCOL  = "hivemind.binary.protocol"
+    POLICY           = "hivemind.policy"
 ```
 
-Source: `hivemind_plugin_manager/__init__.py:10`
+Source: `hivemind_plugin_manager/__init__.py:13`
 
 Each value is the setuptools entry-point group name that plugin packages must use.
 
@@ -83,8 +84,9 @@ Each plugin type has a corresponding factory with two class methods:
 | `AgentProtocolFactory` | `Type[AgentProtocol]` | `AgentProtocol` |
 | `NetworkProtocolFactory` | `Type[NetworkProtocol]` | `NetworkProtocol` |
 | `BinaryDataHandlerProtocolFactory` | `Type[BinaryDataHandlerProtocol]` | `BinaryDataHandlerProtocol` |
+| `PolicyPluginFactory` | `Type[PolicyPlugin]` | `PolicyPlugin` |
 
-Source: `hivemind_plugin_manager/__init__.py:17–89`
+Source: `hivemind_plugin_manager/__init__.py:21–115`
 
 `get_class` raises `KeyError` with a helpful message listing available plugins when the
 requested name is not installed. `create` calls `get_class` then instantiates with the
@@ -129,7 +131,7 @@ class Client:
     description: str = ""
     is_admin: bool = False
     last_seen: float = -1
-    allowed_types: List[str] = field(default_factory=list)  # admission whitelist; deny-by-default
+    allowed_types: List[str] = field(default_factory=list)  # admission whitelist; empty = deny everything
     crypto_key: Optional[str] = None
     password: Optional[str] = None
     can_broadcast: bool = True
@@ -140,13 +142,25 @@ class Client:
 
 Source: `hivemind_plugin_manager/database.py:35`
 
-Notable rules enforced in `__post_init__` (`database.py:52`):
+Notable rules enforced in `__post_init__` (`database.py:56`):
 
 - `client_id` must be `int` — raises `ValueError` otherwise.
 - `is_admin` must be `bool` — raises `ValueError` otherwise.
-- `allowed_types` is populated with a default set of OVOS message types when empty.
-- `"recognizer_loop:utterance"` is always appended to `allowed_types` even if the caller
-  provides a custom list.
+- `allowed_types` is **not** pre-populated. An empty list means the client cannot inject
+  any message type (deny-by-default). Operators grant access explicitly via
+  `hivemind-core allow-msg <type> <id>` or by passing `allowed_types=[...]` on
+  construction. See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85).
+
+`skill_blacklist` and `intent_blacklist` are **deprecated property shims** (`database.py:86`,
+`database.py:102`) that read and write `Client.metadata["skill_blacklist"]` /
+`Client.metadata["intent_blacklist"]` transparently. Setting them emits
+`DeprecationWarning`. `message_blacklist` no longer has a property at all — the field was
+removed because hivemind-core is whitelist-only (deny-by-default); any legacy data for
+this key survives in `metadata` for third-party plugin consumption.
+
+**Legacy constructor kwargs** (`skill_blacklist`, `intent_blacklist`, `message_blacklist`)
+are accepted via a wrapped `__init__` (`database.py:249`) and auto-migrated into
+`metadata` with a `DeprecationWarning`.
 
 ### `metadata` — plugin-specific extension point
 
@@ -154,12 +168,18 @@ Notable rules enforced in `__post_init__` (`database.py:52`):
 context (routing hints, auth metadata, feature flags, telemetry tags, etc.) without
 adding new top-level fields to the core dataclass.
 
-`Client.deserialize` (`database.py:81`) is forward-compatible with older records:
-unknown top-level keys are folded into `metadata` automatically, so a plugin can
-freely add new keys without breaking deserialisation of existing rows. If both an
-explicit `metadata` dict and a stray legacy key exist with the same name, the
-explicit one wins. A non-dict `metadata` value raises `TypeError` — intentional,
-because silently coercing it would mask serializer bugs upstream.
+`Client.deserialize` (`database.py:135`) is forward-compatible with older records in two
+ways:
+
+- **Legacy blacklist fields** (`skill_blacklist`, `intent_blacklist`, `message_blacklist`)
+  found as top-level JSON keys are silently migrated into `metadata` with a
+  `DeprecationWarning`, so existing on-disk JSON databases keep loading without manual
+  migration. Source: `database.py:153`.
+- **Any other unknown top-level key** is folded into `metadata` so plugin-added fields
+  do not break deserialization. Explicit `metadata` dict entries win on collision.
+
+A non-dict `metadata` value in `__post_init__` is coerced to `{}` (`database.py:70`),
+signalling an upstream serializer bug via a missing-key outcome rather than a crash.
 
 ---
 

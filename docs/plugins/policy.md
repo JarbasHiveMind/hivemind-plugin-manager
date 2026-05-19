@@ -39,7 +39,7 @@ class PolicyPlugin(_SubProtocol):
     def observe(self, message, client) -> None: ...
 ```
 
-Source: `hivemind_plugin_manager/policy.py`.
+Source: `hivemind_plugin_manager/policy.py:115`.
 
 `PolicyPlugin` extends `_SubProtocol`
 (`protocols.py:35`), which provides `.identity`, `.database`, and
@@ -75,6 +75,8 @@ agent protocol — out of scope for this contract.
 
 The return value of `review()` and `review_binary()`.
 
+Source: `hivemind_plugin_manager/policy.py:73`
+
 ```python
 @dataclass
 class Verdict:
@@ -96,7 +98,8 @@ A verdict is either denying or allowing-with-mutations:
 # Allow, no changes
 return Verdict.allow()
 
-# Allow, with mutations
+# Allow, with mutations (concrete Mutation subclasses come from the agent plugin)
+# from hivemind_ovos_agent_plugin.policy import AddBlacklistedSkill, SetSessionField
 return Verdict.allow(
     AddBlacklistedSkill("adult.skill"),
     SetSessionField("filter_level", "family"),
@@ -121,6 +124,8 @@ Mutations attached to a *denying* verdict are ignored.
 ---
 
 ## `Mutation`
+
+Source: `hivemind_plugin_manager/policy.py:47`
 
 Typed actions a policy can request on a message being allowed.
 `hivemind-plugin-manager` ships only the abstract base class

@@ -10,13 +10,14 @@ All public symbols exported from `hivemind_plugin_manager`.
 
 ```python
 class HiveMindPluginTypes(str, enum.Enum):
-    DATABASE         = "hivemind.database"           # line 11
-    NETWORK_PROTOCOL = "hivemind.network.protocol"   # line 12
-    AGENT_PROTOCOL   = "hivemind.agent.protocol"     # line 13
-    BINARY_PROTOCOL  = "hivemind.binary.protocol"    # line 14
+    DATABASE         = "hivemind.database"           # line 14
+    NETWORK_PROTOCOL = "hivemind.network.protocol"   # line 15
+    AGENT_PROTOCOL   = "hivemind.agent.protocol"     # line 16
+    BINARY_PROTOCOL  = "hivemind.binary.protocol"    # line 17
+    POLICY           = "hivemind.policy"             # line 18
 ```
 
-Source: `hivemind_plugin_manager/__init__.py:10`
+Source: `hivemind_plugin_manager/__init__.py:13`
 
 Each value is the setuptools entry-point group string used for plugin discovery.
 
@@ -100,6 +101,23 @@ Raises `KeyError` if not found. Source: `__init__.py:76`
 
 ---
 
+### `PolicyPluginFactory`
+
+Source: `hivemind_plugin_manager/__init__.py:96`
+
+Discovers and instantiates policy plugins registered under `hivemind.policy`.
+Consumed by `hivemind-core`'s chain runner when assembling `policy.chain` at startup.
+
+#### `PolicyPluginFactory.get_class(plugin_name: str) -> Type[PolicyPlugin]`
+
+Raises `KeyError` if not found. Source: `__init__.py:103`
+
+#### `PolicyPluginFactory.create(plugin_name, config=None, hm_protocol=None) -> PolicyPlugin`
+
+`config` defaults to `{}` when `None`. Source: `__init__.py:110`
+
+---
+
 ## `hivemind_plugin_manager/database.py`
 
 ### `Client`
@@ -124,30 +142,37 @@ class Client:
     metadata: Dict[str, Any] = field(default_factory=dict)
 ```
 
-`__post_init__` (`database.py:52`) enforces int/bool types and populates `allowed_types`
-with a default OVOS message type set. `"recognizer_loop:utterance"` is always present.
+`__post_init__` (`database.py:56`) enforces int/bool types. `allowed_types` is **not**
+pre-populated — an empty list means deny-by-default. No automatic message types are
+appended. See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85).
 
-**`metadata`** — free-form per-client dict for plugin-specific context. Stays out of
-the schema so individual plugins (auth, routing, telemetry, etc.) can attach arbitrary
-key/value data without growing the core dataclass. `deserialize` folds any unknown
-top-level keys from older records into `metadata` for forward compatibility; an
-explicit `metadata` key in the payload wins on collision. A non-dict `metadata` value
-raises `TypeError` in `deserialize` (intentional — signals upstream serializer bug).
+**Deprecated property shims** — `skill_blacklist` and `intent_blacklist` are read/write
+properties (`database.py:86`, `database.py:102`) backed by `Client.metadata`. Setting
+them emits `DeprecationWarning`; new code should write to `Client.metadata` directly.
+`message_blacklist` has no property — the field was removed because the admission model
+is whitelist-only. Legacy data for this key is preserved in `metadata` by the migration
+path in `deserialize` and the wrapped `__init__` (`database.py:249`).
+
+**`metadata`** — free-form per-client dict for plugin-specific context. `deserialize`
+migrates legacy top-level blacklist keys into `metadata` automatically (`database.py:153`)
+and folds any other unknown top-level keys from older records the same way; an explicit
+`metadata` key in the payload wins on collision. A non-dict `metadata` is coerced to
+`{}` in `__post_init__` (`database.py:70`).
 
 | Method | Signature | Source |
 |---|---|---|
-| `serialize()` | `-> str` (JSON) | `database.py:71` |
-| `deserialize(data)` | `staticmethod(str | dict) -> Client` | `database.py:81` |
-| `__getitem__(key)` | `-> Any`; raises `KeyError` | `database.py:96` |
-| `__setitem__(key, val)` | raises `ValueError` on unknown key | `database.py:113` |
-| `__eq__(other)` | compares serialized JSON | `database.py:129` |
-| `__repr__()` | returns `serialize()` | `database.py:147` |
+| `serialize()` | `-> str` (JSON) | `database.py:126` |
+| `deserialize(data)` | `staticmethod(str \| dict) -> Client` | `database.py:135` |
+| `__getitem__(key)` | `-> Any`; raises `KeyError` | `database.py:180` |
+| `__setitem__(key, val)` | raises `ValueError` on unknown key | `database.py:197` |
+| `__eq__(other)` | compares serialized JSON | `database.py:213` |
+| `__repr__()` | returns `serialize()` | `database.py:231` |
 
 ---
 
 ### `cast2client(ret: ClientTypes) -> Optional[Union[Client, List[Client]]]`
 
-Source: `hivemind_plugin_manager/database.py:15`
+Source: `hivemind_plugin_manager/database.py:16`
 
 Normalises `None`, `Client`, JSON string, dict, or list into `Client` instances. Raises
 `TypeError` for unsupported types.
@@ -156,7 +181,7 @@ Normalises `None`, `Client`, JSON string, dict, or list into `Client` instances.
 
 ### `AbstractDB`
 
-Source: `hivemind_plugin_manager/database.py:158`
+Source: `hivemind_plugin_manager/database.py:269`
 
 ```python
 @dataclass
@@ -182,7 +207,7 @@ class AbstractDB(abc.ABC):
 
 ### `AbstractRemoteDB`
 
-Source: `hivemind_plugin_manager/database.py:266`
+Source: `hivemind_plugin_manager/database.py:378`
 
 Extends `AbstractDB` with:
 
