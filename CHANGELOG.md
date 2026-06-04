@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.6.0a1) (2026-06-04)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.5.1a1...0.6.0a1)
+
+**Merged pull requests:**
+
+- feat: policy plugin primitives \(PolicyPlugin / Verdict / Mutation\) [\#27](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/27) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.5.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.5.1a1) (2026-05-19)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.5.0...0.5.1a1)
