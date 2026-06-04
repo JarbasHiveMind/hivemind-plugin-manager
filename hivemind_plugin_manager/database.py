@@ -146,7 +146,9 @@ class Client:
         else:
             client_data = dict(client_data)  # don't mutate caller's dict
 
-        metadata = client_data.pop("metadata", None) or {}
+        metadata = client_data.pop("metadata", None)
+        if not isinstance(metadata, dict):
+            metadata = {}
 
         # Auto-migrate legacy top-level blacklist fields into metadata so
         # existing on-disk JSON DBs keep loading. Emits a one-time
