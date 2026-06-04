@@ -92,7 +92,7 @@ class Mutation(abc.ABC):
 # Verdict
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(frozen=True)
 class Verdict:
     """The answer a :class:`PolicyPlugin` returns from ``review()``.
 
@@ -179,7 +179,7 @@ class PolicyPlugin(_SubProtocol):
         """
         return Verdict.allow()
 
-    def review_binary(self, payload, client) -> Verdict:
+    def review_binary(self, payload: bytes, client) -> Verdict:
         """Inspect a binary payload about to be forwarded to the agent
         bus. Default: allow."""
         return Verdict.allow()
