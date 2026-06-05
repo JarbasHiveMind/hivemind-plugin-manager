@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.0a1) (2026-06-05)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.6.1a1...0.7.0a1)
+
+**Merged pull requests:**
+
+- feat: mandatory AgentProtocol.natural\_language\_query\(\) streaming abc [\#32](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/32) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.6.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.6.1a1) (2026-06-05)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.6.0a1...0.6.1a1)
