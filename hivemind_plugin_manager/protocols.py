@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict, Any, Union, Optional, Callable
+from typing import Dict, Any, Iterator, List, Union, Optional, Callable
 
 from ovos_bus_client import MessageBusClient
 from ovos_utils.fakebus import FakeBus
@@ -58,13 +58,35 @@ class _SubProtocol:
 
 
 @dataclass
-class AgentProtocol(_SubProtocol):
+class AgentProtocol(_SubProtocol, abc.ABC):
     """protocol to handle Message objects, the payload of HiveMessage objects"""
     bus: Union[FakeBus, MessageBusClient] = dataclasses.field(default_factory=FakeBus)
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None # usually AgentProtocol is passed as kwarg to hm_protocol
                                                              # and only then assigned in hm_protocol.__post_init__
     callbacks: ClientCallbacks = dataclasses.field(default_factory=ClientCallbacks)
+
+    @abc.abstractmethod
+    def natural_language_query(self, utterance: str,
+                               lang: str) -> Iterator[Optional[str]]:
+        """Stream an answer to a natural-language query.
+
+        A generator: ``yield`` each answer chunk — the text of one ``speak`` —
+        as it is produced, then ``yield None`` once to signal end-of-query.
+        Yielding ``None`` immediately (no chunks) means the agent has no answer,
+        and the node escalates the query upstream instead of stalling.
+
+        Streaming lets a satellite start speaking the first sentence while the
+        rest is still being generated — an LLM/persona agent yields sentences as
+        the model produces them; an OVOS agent yields each ``speak`` as it lands
+        and ``None`` when the utterance is handled. This is the mandatory seam
+        hivemind-core's QUERY/CASCADE handlers consume, because *how* an agent
+        answers is backend-specific (a media-only agent just ``yield None``).
+
+        Yields:
+            ``str`` answer chunks, then a final ``None`` end-of-query sentinel.
+        """
+        raise NotImplementedError
 
 @dataclass
 class NetworkProtocol(_SubProtocol):
