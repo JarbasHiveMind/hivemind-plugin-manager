@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.6.1a1) (2026-06-05)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.6.0a1...0.6.1a1)
+
+**Merged pull requests:**
+
+- fix\(deps\): bump json\_database past the bundled-plugin versions [\#30](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/30) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.6.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.6.0a1) (2026-06-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.5.1a1...0.6.0a1)
