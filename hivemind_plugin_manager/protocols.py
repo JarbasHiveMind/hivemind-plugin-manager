@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Any, Iterator, List, Union, Optional, Callable
 
 from ovos_bus_client import MessageBusClient
-from ovos_bus_client.message import Message
 from ovos_utils.fakebus import FakeBus
 from ovos_utils.log import LOG
 
@@ -88,61 +87,6 @@ class AgentProtocol(_SubProtocol, abc.ABC):
             ``str`` answer chunks, then a final ``None`` end-of-query sentinel.
         """
         raise NotImplementedError
-
-    def _stream_from_bus(self, utterance: str, lang: str,
-                         timeout: float = 10.0) -> Iterator[Optional[str]]:
-        """Reusable :meth:`natural_language_query` body for bus-backed agents:
-        inject the utterance under a fresh ``query_id`` (a query-scoped session,
-        so replies are correlated rather than reverse-routed to a satellite),
-        and stream the ``speak`` replies tagged with that id, ending on
-        ``ovos.utterance.handled`` or *timeout* inactivity. Yields each spoken
-        chunk, then a final ``None``.
-        """
-        import queue
-        import uuid
-
-        qid = uuid.uuid4().hex
-        q: "queue.Queue" = queue.Queue()
-
-        def _on_speak(msg):
-            if isinstance(msg, str):
-                try:
-                    msg = Message.deserialize(msg)
-                except Exception:
-                    return
-            if msg.msg_type == "speak" and msg.context.get("query_id") == qid:
-                q.put(msg.data.get("utterance", ""))
-
-        def _on_done(msg):
-            if isinstance(msg, str):
-                try:
-                    msg = Message.deserialize(msg)
-                except Exception:
-                    return
-            if msg.context.get("query_id") == qid:
-                q.put(None)
-
-        self.bus.on("speak", _on_speak)
-        self.bus.on("ovos.utterance.handled", _on_done)
-        try:
-            self.bus.emit(Message(
-                "recognizer_loop:utterance",
-                {"utterances": [utterance], "lang": lang},
-                {"query_id": qid, "session": {"session_id": qid}},
-            ))
-            while True:
-                try:
-                    chunk = q.get(timeout=timeout)
-                except queue.Empty:
-                    yield None
-                    return
-                if chunk is None:
-                    yield None
-                    return
-                yield chunk
-        finally:
-            self.bus.remove("speak", _on_speak)
-            self.bus.remove("ovos.utterance.handled", _on_done)
 
 @dataclass
 class NetworkProtocol(_SubProtocol):

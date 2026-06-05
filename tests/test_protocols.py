@@ -13,6 +13,15 @@ from hivemind_plugin_manager.protocols import (
 )
 
 
+class _ConcreteAgent(AgentProtocol):
+    """Minimal concrete AgentProtocol for testing base infrastructure
+    (AgentProtocol is abstract — agent plugins must implement
+    natural_language_query)."""
+
+    def natural_language_query(self, utterance, lang):
+        yield None
+
+
 class TestModuleLevelCallbacks(unittest.TestCase):
     def test_callbacks_are_callable_and_return_none(self):
         # Each just logs and returns None; calling with a sentinel must not raise.
@@ -37,38 +46,38 @@ class TestClientCallbacks(unittest.TestCase):
         self.assertIs(cb.on_connect, f)
 
 
-class TestAgentProtocol(unittest.TestCase):
+class Test_ConcreteAgent(unittest.TestCase):
     def test_defaults(self):
-        p = AgentProtocol()
+        p = _ConcreteAgent()
         self.assertEqual(p.config, {})
         self.assertIsNone(p.hm_protocol)
         self.assertIsInstance(p.callbacks, ClientCallbacks)
 
     def test_identity_returns_new_when_no_hm_protocol(self):
-        p = AgentProtocol()
+        p = _ConcreteAgent()
         # NodeIdentity instantiable; just ensure property doesn't blow up
         self.assertIsNotNone(p.identity)
 
     def test_identity_delegates_to_hm_protocol(self):
         sentinel = object()
         hm = MagicMock(identity=sentinel)
-        p = AgentProtocol(hm_protocol=hm)
+        p = _ConcreteAgent(hm_protocol=hm)
         self.assertIs(p.identity, sentinel)
 
     def test_database_none_when_no_hm_protocol(self):
-        self.assertIsNone(AgentProtocol().database)
+        self.assertIsNone(_ConcreteAgent().database)
 
     def test_database_delegates_to_hm_protocol(self):
         sentinel = object()
         hm = MagicMock(db=sentinel)
-        self.assertIs(AgentProtocol(hm_protocol=hm).database, sentinel)
+        self.assertIs(_ConcreteAgent(hm_protocol=hm).database, sentinel)
 
     def test_clients_empty_when_no_hm_protocol(self):
-        self.assertEqual(AgentProtocol().clients, {})
+        self.assertEqual(_ConcreteAgent().clients, {})
 
     def test_clients_delegates_to_hm_protocol(self):
         hm = MagicMock(clients={"a": 1})
-        self.assertEqual(AgentProtocol(hm_protocol=hm).clients, {"a": 1})
+        self.assertEqual(_ConcreteAgent(hm_protocol=hm).clients, {"a": 1})
 
 
 class TestNetworkProtocol(unittest.TestCase):
