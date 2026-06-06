@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.1a1) (2026-06-06)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.7.0a1...0.7.1a1)
+
+**Merged pull requests:**
+
+- fix: Client.message\_blacklist no-op read shim \(AttributeError on read\) [\#35](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/35) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.0a1) (2026-06-05)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.6.1a1...0.7.0a1)
