@@ -292,14 +292,21 @@ class TestDeprecatedBlacklistShims(unittest.TestCase):
         self.assertEqual(c.skill_blacklist, [])
         self.assertEqual(c.intent_blacklist, [])
 
-    def test_message_blacklist_kwarg_accepted_but_discarded(self):
-        """``message_blacklist`` is not part of the data model. The
-        kwarg is accepted to keep backends that pass it positionally
-        working, but the value is discarded with a DeprecationWarning
-        — no property, no metadata carry-forward."""
-        # No property at the class level.
-        self.assertFalse(hasattr(type(Client(client_id=1, api_key="k")),
-                                  "message_blacklist"))
+    def test_message_blacklist_noop_shim(self):
+        """``message_blacklist`` is removed from the data model. A no-op read
+        shim keeps legacy readers (older protocol plugins) working: it always
+        returns [] and warns. The constructor kwarg is accepted but discarded
+        with a DeprecationWarning — no metadata carry-forward."""
+        # Read shim exists at the class level and returns [] with a warning.
+        self.assertTrue(hasattr(type(Client(client_id=1, api_key="k")),
+                                 "message_blacklist"))
+        ctx, caught = self._catch_warnings()
+        try:
+            val = Client(client_id=1, api_key="k").message_blacklist
+        finally:
+            ctx.__exit__(None, None, None)
+        self.assertEqual(val, [])
+        self._assert_has_deprecation(caught, "message_blacklist")
         # Constructor kwarg is accepted but emits a warning and
         # discards the value — NOT carried into metadata.
         ctx, caught = self._catch_warnings()
