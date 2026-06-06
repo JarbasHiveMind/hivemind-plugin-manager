@@ -115,11 +115,28 @@ class Client:
         else:
             self.metadata.pop("intent_blacklist", None)
 
-    # message_blacklist is not part of the data model. No property
-    # shim and no metadata carry-forward; deserialize strips the
-    # top-level key silently, the kwarg path discards the value with
-    # a DeprecationWarning but the kwarg itself is accepted so
-    # backends passing it positionally don't crash.
+    # message_blacklist is not part of the data model and carries no
+    # value: deserialize strips the top-level key and the kwarg path
+    # discards it (see _client_init_with_legacy_kwargs). The read shim
+    # below keeps `client.message_blacklist` working as a no-op for
+    # legacy readers — it always returns [] and warns — so callers that
+    # still reference it (older protocol plugins) don't crash.
+    @property
+    def message_blacklist(self) -> List[str]:
+        warnings.warn(
+            "Client.message_blacklist is removed and ignored; hivemind-core "
+            "is whitelist-only (use allowed_types). This shim returns [].",
+            DeprecationWarning, stacklevel=2,
+        )
+        return []
+
+    @message_blacklist.setter
+    def message_blacklist(self, value):
+        warnings.warn(
+            "Client.message_blacklist is removed and ignored; hivemind-core "
+            "is whitelist-only (use allowed_types). Setting it has no effect.",
+            DeprecationWarning, stacklevel=2,
+        )
 
     def serialize(self) -> str:
         """
