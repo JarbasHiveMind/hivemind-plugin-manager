@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hivemind-plugin-manager"
+description = "plugin manager for hivemind-core"
+readme = "README.md"
+authors = [{ name = "jarbasAI", email = "jarbasai@mailfence.com" }]
+license = "Apache-2.0"
+requires-python = ">=3.10"
+keywords = ["hivemind", "plugins", "plugin-manager"]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/JarbasHiveMind/hivemind-plugin-manager"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+hpm = "hivemind_plugin_manager.tui:cli"
+
+[tool.setuptools]
+packages = ["hivemind_plugin_manager"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "hivemind_plugin_manager.version.__version__" }
+dependencies = { file = ["requirements.txt"] }
