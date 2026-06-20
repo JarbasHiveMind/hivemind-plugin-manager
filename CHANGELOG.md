@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.1a2) (2026-06-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.7.1a1...0.7.1a2)
+
+**Merged pull requests:**
+
+- build: migrate setup.py → pyproject.toml [\#37](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/37) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.1a1) (2026-06-06)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.7.0a1...0.7.1a1)
