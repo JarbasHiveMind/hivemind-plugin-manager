@@ -79,6 +79,45 @@ class Test_ConcreteAgent(unittest.TestCase):
         hm = MagicMock(clients={"a": 1})
         self.assertEqual(_ConcreteAgent(hm_protocol=hm).clients, {"a": 1})
 
+    def test_get_bus_defaults_to_shared_bus(self):
+        # Default hook: every client shares the one agent bus.
+        p = _ConcreteAgent()
+        self.assertIs(p.get_bus(client=object()), p.bus)
+        self.assertIs(p.get_bus(), p.bus)
+
+    def test_answer_query_defaults_to_natural_language_query(self):
+        # Default hook ignores client and delegates to the NLQ primitive.
+        p = _ConcreteAgent()
+        self.assertEqual(list(p.answer_query("hello", "en-us", client=object())),
+                         [None])
+
+
+class TestMultiplexingAgentOverrides(unittest.TestCase):
+    """A multiplexing agent (one sub-agent per access key) overrides the
+    default hooks to route by client — the seam MultiMind relies on."""
+
+    def test_get_bus_and_answer_query_route_per_client(self):
+        buses = {"key-a": object(), "key-b": object()}
+
+        class _Mux(AgentProtocol):
+            def natural_language_query(self, utterance, lang):
+                yield None  # unused; routing happens in answer_query
+
+            def get_bus(self, client=None):
+                return buses[client.key]
+
+            def answer_query(self, utterance, lang, client=None):
+                yield f"{client.key}:{utterance}"
+                yield None
+
+        mux = _Mux()
+        self.assertIs(mux.get_bus(MagicMock(key="key-a")), buses["key-a"])
+        self.assertIs(mux.get_bus(MagicMock(key="key-b")), buses["key-b"])
+        self.assertEqual(
+            list(mux.answer_query("hi", "en-us", client=MagicMock(key="key-b"))),
+            ["key-b:hi", None],
+        )
+
 
 class TestNetworkProtocol(unittest.TestCase):
     def test_agent_protocol_none_when_no_hm_protocol(self):

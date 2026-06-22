@@ -88,6 +88,31 @@ class AgentProtocol(_SubProtocol, abc.ABC):
         """
         raise NotImplementedError
 
+    def get_bus(self, client: Optional['HiveMindClientConnection'] = None
+                ) -> Union[FakeBus, MessageBusClient]:
+        """Return the bus a given client's injected messages should land on.
+
+        Default: the single shared agent bus. A *multiplexing* agent (e.g. one
+        isolated brain per access key) overrides this to return a per-client
+        bus; ``hivemind-core`` calls it for every injected message, so per-key
+        routing on the inject path stays transparent and needs no peer-sniffing.
+        """
+        return self.bus
+
+    def answer_query(self, utterance: str, lang: str,
+                     client: Optional['HiveMindClientConnection'] = None
+                     ) -> Iterator[Optional[str]]:
+        """Context-aware entry point for the QUERY/CASCADE streaming path.
+
+        ``natural_language_query`` is the backend primitive (utterance + lang,
+        no caller identity). ``answer_query`` is what ``hivemind-core`` calls,
+        additionally passing the originating ``client`` so a multiplexing agent
+        can dispatch to the right per-key sub-agent. The default ignores the
+        client and delegates to ``natural_language_query``, so existing agents
+        need no changes.
+        """
+        yield from self.natural_language_query(utterance, lang)
+
 @dataclass
 class NetworkProtocol(_SubProtocol):
     """protocol to transport HiveMessage objects around"""
