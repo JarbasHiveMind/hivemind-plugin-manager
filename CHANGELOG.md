@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.8.0a1) (2026-06-23)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.7.1a2...0.8.0a1)
+
+**Merged pull requests:**
+
+- feat: add get\_bus/answer\_query agent hooks for per-tenant routing [\#39](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/39) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.7.1a2) (2026-06-20)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.7.1a1...0.7.1a2)
