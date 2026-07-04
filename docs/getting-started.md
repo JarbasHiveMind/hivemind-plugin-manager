@@ -9,7 +9,7 @@ handler — is a separate installable Python package that registers itself under
 setuptools entry-point group. HPM discovers those entry points at runtime and exposes factory
 classes so callers never need to hard-code import paths.
 
-There are exactly four plugin types:
+There are exactly five plugin types:
 
 | Type | Entry-point group | What it does |
 |---|---|---|
@@ -17,6 +17,7 @@ There are exactly four plugin types:
 | `AGENT_PROTOCOL` | `hivemind.agent.protocol` | Bridges HiveMind messages to an AI backend |
 | `NETWORK_PROTOCOL` | `hivemind.network.protocol` | Transports `HiveMessage` objects over a wire |
 | `BINARY_PROTOCOL` | `hivemind.binary.protocol` | Handles raw binary payloads (audio, images, files) |
+| `POLICY` | `hivemind.policy` | Admission-control: allow, deny, or mutate messages before they reach the bus |
 
 Source: `hivemind_plugin_manager/__init__.py:10`
 
