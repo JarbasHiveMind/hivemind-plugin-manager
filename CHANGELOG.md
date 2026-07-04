@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0a3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.8.0a3) (2026-07-04)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.8.0a2...0.8.0a3)
+
+**Merged pull requests:**
+
+- docs: add policy plugin type, fix stale Client dataclass [\#34](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/34) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.8.0a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.8.0a2) (2026-07-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.8.0a1...0.8.0a2)
