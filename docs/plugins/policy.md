@@ -106,6 +106,8 @@ class Verdict:
     def allow(cls, *mutations: Mutation) -> "Verdict": ...
     @classmethod
     def deny(cls, code: str, reason: str = "", **data: Any) -> "Verdict": ...
+    @classmethod
+    def busy(cls, reason: str = "policy admission is busy", **data: Any) -> "Verdict": ...
 ```
 
 A verdict is either denying or allowing-with-mutations:
@@ -127,6 +129,9 @@ return Verdict.deny(
     "daily limit of 100 reached",
     limit=100, used=100, window="1d",
 )
+
+# Retryable backpressure — clients should back off and retry
+return Verdict.busy(retry_after_ms=250)
 ```
 
 `code` is a **stable, machine-readable** string clients can switch on

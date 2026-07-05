@@ -51,6 +51,7 @@ class DenyCodes(str, Enum):
 
     POLICY_ERROR = "policy_error"
     POLICY_CHAIN_UNAVAILABLE = "policy_chain_unavailable"
+    POLICY_BUSY = "policy_busy"
     ACL_DISALLOWED_TYPE = "acl_disallowed_type"
     SESSION_ID_DEFAULT_FORBIDDEN = "session_id_default_forbidden"
 
@@ -129,6 +130,17 @@ class Verdict:
         """
         code_str = code.value if isinstance(code, DenyCodes) else str(code)
         return cls(denied=True, code=code_str, reason=reason, data=dict(data))
+
+    @classmethod
+    def busy(cls, reason: str = "policy admission is busy", **data: Any) -> "Verdict":
+        """Construct a retryable backpressure denial.
+
+        Core can use this when the policy/admission path is overloaded or
+        times out. Clients should treat it differently from a permanent ACL
+        denial: back off and retry instead of waiting until their own request
+        timeout expires.
+        """
+        return cls.deny(DenyCodes.POLICY_BUSY, reason, **data)
 
 
 # ---------------------------------------------------------------------------

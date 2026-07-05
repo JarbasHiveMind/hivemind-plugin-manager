@@ -217,6 +217,13 @@ class TestPolicyContractSimulated(unittest.TestCase):
         self.assertTrue(v.denied)
         self.assertEqual(v.code, "acl_disallowed_type")
 
+    def test_busy_verdict_marks_retryable_backpressure(self):
+        v = Verdict.busy(retry_after_ms=500)
+        self.assertTrue(v.denied)
+        self.assertEqual(v.code, DenyCodes.POLICY_BUSY.value)
+        self.assertEqual(v.reason, "policy admission is busy")
+        self.assertEqual(v.data["retry_after_ms"], 500)
+
     # -- observe never blocks delivery --
 
     def test_observe_exception_does_not_propagate(self):

@@ -16,7 +16,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from hivemind_plugin_manager import (HiveMindPluginTypes, Mutation,
+from hivemind_plugin_manager import (DenyCodes, HiveMindPluginTypes, Mutation,
                                      PolicyPlugin, PolicyPluginFactory,
                                      Verdict)
 
@@ -65,6 +65,13 @@ class TestVerdictFactories(unittest.TestCase):
         self.assertEqual(v.code, "quota_exceeded")
         self.assertEqual(v.reason, "daily limit reached")
         self.assertEqual(v.data, {"limit": 100, "used": 100})
+
+    def test_busy_uses_stable_retryable_code(self):
+        v = Verdict.busy(retry_after_ms=250)
+        self.assertTrue(v.denied)
+        self.assertEqual(v.code, DenyCodes.POLICY_BUSY.value)
+        self.assertEqual(v.reason, "policy admission is busy")
+        self.assertEqual(v.data, {"retry_after_ms": 250})
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +178,9 @@ class TestPackageReExports(unittest.TestCase):
 
     def test_policy_enum_value(self):
         self.assertEqual(HiveMindPluginTypes.POLICY.value, "hivemind.policy")
+
+    def test_policy_busy_code_value(self):
+        self.assertEqual(DenyCodes.POLICY_BUSY.value, "policy_busy")
 
 
 if __name__ == "__main__":
