@@ -425,6 +425,17 @@ class AbstractDB(abc.ABC):
             return None
         return matches[0] if matches else None
 
+    def get_client_by_api_key(self, api_key: str) -> Optional['Client']:
+        """Return the client with the given ``api_key`` or ``None``.
+
+        Default implementation uses :meth:`search_by_value` so backends
+        get a working lookup for free. Backends with a faster path
+        (direct key get, indexed lookup) should override — this is called
+        on every connection admission.
+        """
+        matches = self.search_by_value("api_key", api_key)
+        return matches[0] if matches else None
+
     def _check_forward_compat(self, stored_version: int) -> None:
         """Raise ``RuntimeError`` if the stored schema version is newer
         than this backend supports.

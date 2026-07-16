@@ -219,6 +219,13 @@ class TestAbstractDB(unittest.TestCase):
         # delete leaves revoked entry, plus new
         self.assertIn(2, ids)
 
+    def test_get_client_by_api_key(self):
+        db = _InMemoryDB()
+        db.add_item(Client(client_id=1, api_key="k", name="a"))
+        db.add_item(Client(client_id=2, api_key="k2", name="b"))
+        self.assertEqual(db.get_client_by_api_key("k2").client_id, 2)
+        self.assertIsNone(db.get_client_by_api_key("missing"))
+
     def test_commit_default_returns_true(self):
         db = _InMemoryDB()
         self.assertTrue(db.commit())
