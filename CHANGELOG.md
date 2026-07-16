@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a1) (2026-07-16)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.8.0a3...0.9.0a1)
+
+**Merged pull requests:**
+
+- feat: default get\_client\_by\_api\_key lookup on AbstractDB [\#45](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/45) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.8.0a3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.8.0a3) (2026-07-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.8.0a2...0.8.0a3)
