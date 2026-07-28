@@ -132,37 +132,8 @@ class OVOSBridgeProtocol(AgentProtocol):
 ```
 
 The exact additional methods available on `HiveMindListenerProtocol` are documented in
-hivemind-core.
-
-## Client Message Delivery
-
-After Core admits an incoming client message, it calls
-`emit_client_message(message, client)` to deliver it to the agent runtime:
-
-In simplified pseudocode:
-
-```python
-def emit_client_message(self, message: Message,
-                        client: HiveMindClientConnection = None) -> bool:
-    self.get_bus(client).emit(message)
-    return True
-```
-
-The default preserves compatibility with shared and per-client buses. An agent
-that owns transport recovery, checked writes, or a bus pool should override the
-hook. It must return `True` only when its transport accepted the message;
-returning `False` or raising tells Core that delivery failed, so Core can avoid
-recording an undelivered message as observed.
-
-```python
-def emit_client_message(self, message, client=None):
-    bus = self.get_bus(client)
-    bus.emit_checked(message)
-    return True
-```
-
-Transport-specific recovery belongs in the concrete agent plugin. Core owns
-admission and delivery accounting, while HPM only defines this stable boundary.
+hivemind-core. HPM only defines the dataclass fields, `_SubProtocol` property helpers,
+and the `natural_language_query` contract.
 
 ---
 

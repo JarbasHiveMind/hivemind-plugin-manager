@@ -1,10 +1,9 @@
 import abc
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict, Any, Iterator, Union, Optional, Callable
+from typing import Dict, Any, Iterator, List, Union, Optional, Callable
 
 from ovos_bus_client import MessageBusClient
-from ovos_bus_client.message import Message
 from ovos_utils.fakebus import FakeBus
 from ovos_utils.log import LOG
 
@@ -99,21 +98,6 @@ class AgentProtocol(_SubProtocol, abc.ABC):
         routing on the inject path stays transparent and needs no peer-sniffing.
         """
         return self.bus
-
-    def emit_client_message(
-            self,
-            message: Message,
-            client: Optional['HiveMindClientConnection'] = None) -> bool:
-        """Deliver an admitted client message to the agent runtime.
-
-        The default preserves the shared/per-client bus behavior exposed by
-        :meth:`get_bus`. Agents that own reconnects, checked writes, or bus
-        pools should override this hook and return ``True`` only after the
-        message has been accepted by their transport. Returning ``False`` or
-        raising signals that delivery failed.
-        """
-        self.get_bus(client).emit(message)
-        return True
 
     def answer_query(self, utterance: str, lang: str,
                      client: Optional['HiveMindClientConnection'] = None
