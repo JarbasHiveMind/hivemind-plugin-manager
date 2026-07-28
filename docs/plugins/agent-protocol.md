@@ -139,6 +139,8 @@ hivemind-core.
 After Core admits an incoming client message, it calls
 `emit_client_message(message, client)` to deliver it to the agent runtime:
 
+In simplified pseudocode:
+
 ```python
 def emit_client_message(self, message: Message,
                         client: HiveMindClientConnection = None) -> bool:
