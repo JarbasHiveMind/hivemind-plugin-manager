@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock
 
+from ovos_bus_client.message import Message
+
 from hivemind_plugin_manager.protocols import (
     AgentProtocol,
     BinaryDataHandlerProtocol,
@@ -85,6 +87,26 @@ class Test_ConcreteAgent(unittest.TestCase):
         self.assertIs(p.get_bus(client=object()), p.bus)
         self.assertIs(p.get_bus(), p.bus)
 
+    def test_emit_client_message_uses_selected_bus(self):
+        bus = MagicMock()
+        client = object()
+        message = Message("recognizer_loop:utterance")
+        p = _ConcreteAgent(bus=bus)
+        p.get_bus = MagicMock(return_value=bus)
+
+        self.assertTrue(p.emit_client_message(message, client))
+
+        p.get_bus.assert_called_once_with(client)
+        bus.emit.assert_called_once_with(message)
+
+    def test_emit_client_message_propagates_delivery_error(self):
+        bus = MagicMock()
+        bus.emit.side_effect = RuntimeError("socket closed")
+        p = _ConcreteAgent(bus=bus)
+
+        with self.assertRaisesRegex(RuntimeError, "socket closed"):
+            p.emit_client_message(Message("speak"))
+
     def test_answer_query_defaults_to_natural_language_query(self):
         # Default hook ignores client and delegates to the NLQ primitive.
         p = _ConcreteAgent()
@@ -96,8 +118,8 @@ class TestMultiplexingAgentOverrides(unittest.TestCase):
     """A multiplexing agent (one sub-agent per access key) overrides the
     default hooks to route by client — the seam MultiMind relies on."""
 
-    def test_get_bus_and_answer_query_route_per_client(self):
-        buses = {"key-a": object(), "key-b": object()}
+    def test_default_delivery_and_answer_query_route_per_client(self):
+        buses = {"key-a": MagicMock(), "key-b": MagicMock()}
 
         class _Mux(AgentProtocol):
             def natural_language_query(self, utterance, lang):
@@ -111,10 +133,16 @@ class TestMultiplexingAgentOverrides(unittest.TestCase):
                 yield None
 
         mux = _Mux()
-        self.assertIs(mux.get_bus(MagicMock(key="key-a")), buses["key-a"])
+        client_a = MagicMock(key="key-a")
+        client_b = MagicMock(key="key-b")
+
+        self.assertIs(mux.get_bus(client_a), buses["key-a"])
         self.assertIs(mux.get_bus(MagicMock(key="key-b")), buses["key-b"])
+        message = Message("recognizer_loop:utterance")
+        self.assertTrue(mux.emit_client_message(message, client_a))
+        buses["key-a"].emit.assert_called_once_with(message)
         self.assertEqual(
-            list(mux.answer_query("hi", "en-us", client=MagicMock(key="key-b"))),
+            list(mux.answer_query("hi", "en-us", client=client_b)),
             ["key-b:hi", None],
         )
 
