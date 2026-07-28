@@ -12,7 +12,5 @@ jobs:
       python_version: '3.11'
       coverage_source: 'hivemind_plugin_manager'
       test_path: 'tests/'
-      # The shared workflow installs .[dev] first. Setting install_extras
-      # also triggers a buggy `pip install test` literal, so the dev alias in
-      # pyproject.toml is the single source for coverage test dependencies.
+      install_extras: 'test'
       min_coverage: 70

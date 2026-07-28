@@ -35,21 +35,6 @@ test = [
     "ovos-simple-listener>=0.3.1a1",
     "hivemind-json-db-plugin>=0.0.3a2",
 ]
-# Alias for the shared coverage workflow, which probes [dev] before [test].
-# Keep this list aligned with [test].
-dev = [
-    "pytest",
-    "hivescope>=0.5.2a1",
-    "ovos-bus-client>=2.0.0a3,<3.0.0",
-    "ovos-plugin-manager>=2.4.1a1,<3.0.0",
-    "ovos-utils>=0.0.40",
-    "hivemind-core>=4.6.7a1",
-    "hivemind-websocket-protocol>=0.2.1a1",
-    "hivemind-ovos-agent-plugin>=0.3.2a1",
-    "hivemind-audio-binary-protocol>=2.1.6a3",
-    "ovos-simple-listener>=0.3.1a1",
-    "hivemind-json-db-plugin>=0.0.3a2",
-]
 
 [project.scripts]
 hpm = "hivemind_plugin_manager.tui:cli"
