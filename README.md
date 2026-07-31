@@ -1,24 +1,24 @@
 # HiveMind Plugin Manager
 
 > **Full documentation:** [docs/README.md](docs/README.md)
-> — [Getting Started](docs/getting-started.md)
+> | [Getting Started](docs/getting-started.md)
 > | [Concepts](docs/concepts.md)
 > | [API Reference](docs/api-reference.md)
 > | [Contributing](docs/contributing.md)
 
-The **HiveMind Plugin Manager (HPM)** is a system for discovering, managing, and loading plugins within the HiveMind ecosystem. It supports various plugin types, including databases, network protocols, agent protocols, and binary data handlers. HPM allows for dynamic integration of these plugins to enhance the functionality of HiveMind agents, offering a flexible and extensible architecture.
+The **HiveMind Plugin Manager (HPM)** discovers, manages, and loads plugins for the HiveMind ecosystem. It defines plugin types for databases, network protocols, agent protocols, and binary data handlers. HPM loads these plugins at runtime, so HiveMind agents can swap a backend without changing core code.
 
 ## Features
 
-- **Plugin Discovery**: Easily find and load plugins of different types, including:
-  - **Database Plugins**: Supports various database types such as JSON, SQLite, and Redis.
-  - **Agent Protocol Plugins**: Integrates agent protocols like OVOS and Persona, enabling seamless communication between HiveMind agents.
-  - **Network Protocol Plugins**: Enables network protocols such as WebSockets for distributed communication.
-  - **Binary Data Handler Plugins**: Handle binary data communication, like audio data over HiveMind.
+- **Plugin discovery**: find and load plugins of different types, including:
+  - **Database plugins**: JSON, SQLite, and Redis.
+  - **Agent protocol plugins**: OVOS and Persona, for communication between HiveMind agents.
+  - **Network protocol plugins**: WebSockets, for distributed communication.
+  - **Binary data handler plugins**: binary data communication, like audio data over HiveMind.
 
-- **Plugin Loading**: Dynamically load specific plugins by name, type, or from available entry points.
+- **Plugin loading**: load a specific plugin by name, type, or from an available entry point.
 
-- **Factories for Plugin Instantiation**: Factories for creating instances of each plugin type (database, agent protocol, network protocol, binary protocol) based on user configurations.
+- **Factories for plugin instantiation**: each plugin type (database, agent protocol, network protocol, binary protocol) has a factory that creates instances from a user configuration.
 
 
 ## Installation
@@ -29,9 +29,9 @@ pip install hivemind-plugin-manager
 
 ## Usage
 
-The following example demonstrates how to discover and load plugins, along with creating instances using the provided factories.
+The examples below show how to discover and load plugins, and how to create instances with the provided factories.
 
-### Discovering Plugins
+### Discovering plugins
 
 Use the `find_plugins` function to discover all available plugins for a specific type:
 
@@ -47,9 +47,9 @@ agent_protocol_plugins = find_plugins(HiveMindPluginTypes.AGENT_PROTOCOL)
 print(agent_protocol_plugins)
 ```
 
-### Creating Plugin Instances
+### Creating plugin instances
 
-Each plugin type has a corresponding factory class that allows for creating plugin instances with the required configuration.
+Each plugin type has a factory class that creates plugin instances with the required configuration.
 
 #### Database Plugin Factory
 
@@ -93,27 +93,41 @@ binary_data_handler_instance = BinaryDataHandlerProtocolFactory.create("hivemind
   <img src="https://github.com/user-attachments/assets/160ebc5c-da61-4175-98dd-ade24bb218e3" alt="HiveMind Plugin Manager" width="800">
 </div>
 
-### 1. **Database Plugins**
+### 1. Database plugins
 
-Supports multiple database systems, such as:
+Supports multiple database systems:
 
-- **JSON Database**: Stores data in a JSON format.
-- **SQLite Database**: Uses SQLite for local database storage.
-- **Redis Database**: Uses Redis for distributed caching and storage.
+- **JSON database**: stores data in JSON format ([hivemind-json-db-plugin](https://github.com/JarbasHiveMind/hivemind-json-db-plugin)).
+- **SQLite database**: stores data locally with SQLite ([hivemind-sqlite-database](https://github.com/JarbasHiveMind/hivemind-sqlite-database)).
+- **Redis database**: stores data with Redis, for distributed caching and storage ([hivemind-redis-database](https://github.com/JarbasHiveMind/hivemind-redis-database)).
 
-### 2. **Agent Protocol Plugins**
+### 2. Agent protocol plugins
 
-Supports communication protocols for agents, such as:
+Supports communication protocols for agents:
 
-- **OVOS Protocol**: For interaction with OVOS-based agents.
-- **Persona Protocol**: For interaction with the Persona framework.
+- **OVOS protocol**: connects to OVOS-based agents ([hivemind-ovos-agent-plugin](https://github.com/JarbasHiveMind/hivemind-ovos-agent-plugin)).
+- **Persona protocol**: connects to the Persona framework.
 
-### 3. **Network Protocol Plugins**
+### 3. Network protocol plugins
 
-Enables network communication protocols, such as:
+Supports network communication protocols:
 
-- **WebSocket Protocol**: For real-time, bidirectional communication over WebSockets.
+- **WebSocket protocol**: real-time, bidirectional communication over WebSockets ([hivemind-websocket-protocol](https://github.com/JarbasHiveMind/hivemind-websocket-protocol)).
 
-### 4. **Binary Data Handler Protocol Plugins**
+### 4. Binary data handler protocol plugins
 
-Handles communication of binary data types, like audio, using specialized protocols.
+Handles binary data, like audio, with a specialized protocol ([hivemind-audio-binary-protocol](https://github.com/JarbasHiveMind/hivemind-audio-binary-protocol)).
+
+## Related projects
+
+- [HiveMind-core](https://github.com/JarbasHiveMind/HiveMind-core): the HiveMind server that consumes these plugins.
+- [hivemind-json-db-plugin](https://github.com/JarbasHiveMind/hivemind-json-db-plugin): database plugin for JSON.
+- [hivemind-sqlite-database](https://github.com/JarbasHiveMind/hivemind-sqlite-database): database plugin for SQLite.
+- [hivemind-redis-database](https://github.com/JarbasHiveMind/hivemind-redis-database): database plugin for Redis.
+- [hivemind-ovos-agent-plugin](https://github.com/JarbasHiveMind/hivemind-ovos-agent-plugin): agent protocol plugin for OVOS.
+- [hivemind-websocket-protocol](https://github.com/JarbasHiveMind/hivemind-websocket-protocol): network protocol plugin for WebSockets.
+- [hivemind-audio-binary-protocol](https://github.com/JarbasHiveMind/hivemind-audio-binary-protocol): binary protocol plugin for audio.
+
+## License
+
+See [LICENSE.md](LICENSE.md).

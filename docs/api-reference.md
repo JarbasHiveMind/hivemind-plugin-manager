@@ -31,7 +31,7 @@ Discovers all installed plugins matching `plug_type`.
 
 | Argument | Type | Behaviour |
 |---|---|---|
-| `None` | — | iterates every `HiveMindPluginTypes` group, merges results |
+| `None` | - | iterates every `HiveMindPluginTypes` group, merges results |
 | `HiveMindPluginTypes` member | enum | iterates that one group |
 | `str` | raw entry-point group name | iterates that group |
 
@@ -143,10 +143,10 @@ class Client:
 ```
 
 `__post_init__` (`database.py:56`) enforces int/bool types. `allowed_types` is **not**
-pre-populated — an empty list means deny-by-default. No automatic message types are
+pre-populated - an empty list means deny-by-default. No automatic message types are
 appended. See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85).
 
-**Deprecated property shims** — `skill_blacklist` and `intent_blacklist` are read/write
+**Deprecated property shims** - `skill_blacklist` and `intent_blacklist` are read/write
 properties (`database.py:86`, `database.py:102`) backed by `Client.metadata`. Setting
 them emits `DeprecationWarning`; new code should write to `Client.metadata` directly.
 `message_blacklist` is not part of the data model: no property, no metadata
@@ -154,7 +154,7 @@ carry-forward. The constructor kwarg is accepted-and-discarded with a
 `DeprecationWarning`, and `deserialize` strips the top-level key silently from on-disk
 records.
 
-**`metadata`** — free-form per-client dict for plugin-specific context. `deserialize`
+**`metadata`** - free-form per-client dict for plugin-specific context. `deserialize`
 migrates legacy top-level blacklist keys into `metadata` automatically (`database.py:153`)
 and folds any other unknown top-level keys from older records the same way; an explicit
 `metadata` key in the payload wins on collision. A non-dict `metadata` is coerced to
@@ -200,11 +200,11 @@ class AbstractDB(abc.ABC):
 | `search_by_value` | yes | `(key: str, val) -> List[Client]` | `database.py:364` |
 | `__len__` | yes | `() -> int` | `database.py:377` |
 | `__iter__` | yes | `() -> Iterable[Client]` | `database.py:386` |
-| `delete_item` | no | `(client) -> bool` — tombstone pattern | `database.py:323` |
-| `update_item` | no | `(client) -> bool` — calls `add_item` | `database.py:337` |
+| `delete_item` | no | `(client) -> bool` - tombstone pattern | `database.py:323` |
+| `update_item` | no | `(client) -> bool` - calls `add_item` | `database.py:337` |
 | `replace_item` | no | `(old, new) -> bool` | `database.py:349` |
-| `sync` | no | `()` — no-op | `database.py:394` |
-| `migrate` | no | `(from_version: int) -> None` — schema migration hook (default no-op); backends override for their persisted on-disk shape | `database.py:405` |
+| `sync` | no | `()` - no-op | `database.py:394` |
+| `migrate` | no | `(from_version: int) -> None` - schema migration hook (default no-op); backends override for their persisted on-disk shape | `database.py:405` |
 | `commit` | no | `() -> True` | `database.py:420` |
 
 See [Concepts → Database Schema Migration](concepts.md#database-schema-migration)
@@ -296,7 +296,7 @@ Additional property:
 |---|---|---|
 | `agent_protocol` | `hm_protocol.agent_protocol` or `None` | `protocols.py:77` |
 
-Abstract method: `run(self)` — must block while serving. Source: `protocols.py:82`
+Abstract method: `run(self)` - must block while serving. Source: `protocols.py:82`
 
 ---
 
@@ -329,4 +329,7 @@ CLI entry point registered as `hpm` console script (`setup.py:54`).
 `<type>` accepts: `network`, `agent`, `binary`, `database`.
 
 Config file: `~/.config/hivemind-core/server.json` (XDG).
-`get_server_config()` — `tui.py:54` — creates the file with defaults on first run.
+`get_server_config()` - `tui.py:54` - creates the file with defaults on first run.
+
+---
+[← Concepts](concepts.md) · [Home](README.md) · [Advanced →](advanced.md)
