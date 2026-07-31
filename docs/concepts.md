@@ -40,7 +40,7 @@ entry_points={
 }
 ```
 
-The left-hand side of the `=` is the **plugin name** — the string callers pass to factories.
+The left-hand side of the `=` is the **plugin name** - the string callers pass to factories.
 The right-hand side is the dotted import path to the class.
 
 HPM itself does not ship any plugin implementation. It only defines the abstractions and
@@ -66,8 +66,8 @@ Key behaviours:
 
 - Passing `None` iterates **all five** entry-point groups (database, agent protocol, network protocol, binary protocol, policy) and merges the results.
 - Passing a string (e.g. `"hivemind.database"`) is also accepted.
-- If a plugin's `load()` raises, the error is logged once and the entry point is skipped;
-  the dict simply will not contain that name. This is the **error-swallowing** behaviour
+- If a plugin's `load()` raises, the error is logged once and the entry point is skipped.
+  The dict simply does not contain that name. This is the **error-swallowing** behavior
   described in [Advanced](advanced.md).
 - Already-errored entry points are tracked in `find_plugins._errored` to prevent log spam
   on repeated calls.
@@ -111,15 +111,15 @@ Source: `hivemind_plugin_manager/__init__.py:33`
 ## Plugin Lifecycle
 
 A plugin class is loaded once when `find_plugins()` is called. Factories instantiate a new
-object per `create()` call. There is no HPM-managed teardown; cleanup is the plugin's
-responsibility (e.g. close database connections in `__del__` or an explicit `close()` method
-if the implementation adds one).
+object per `create()` call. HPM does not manage teardown. Cleanup is the plugin's
+responsibility (for example, close database connections in `__del__` or an explicit
+`close()` method if the implementation adds one).
 
 ---
 
 ## The `Client` Dataclass
 
-`Client` is the core data model — it represents a device or credential authorised to connect
+`Client` is the core data model - it represents a device or credential authorised to connect
 to a HiveMind node.
 
 ```python
@@ -144,18 +144,18 @@ Source: `hivemind_plugin_manager/database.py:35`
 
 Notable rules enforced in `__post_init__` (`database.py:56`):
 
-- `client_id` must be `int` — raises `ValueError` otherwise.
-- `is_admin` must be `bool` — raises `ValueError` otherwise.
+- `client_id` must be `int` - raises `ValueError` otherwise.
+- `is_admin` must be `bool` - raises `ValueError` otherwise.
 - `allowed_types` is **not** pre-populated. An empty list means the client cannot inject
   any message type (deny-by-default). The consumer that enforces this (typically
-  `hivemind-core`) decides how operators grant access — HPM only owns the data shape.
+  `hivemind-core`) decides how operators grant access - HPM only owns the data shape.
   See [HiveMind-core#85](https://github.com/JarbasHiveMind/HiveMind-core/issues/85)
   for the admission-chain design that consumes this field.
 
 `skill_blacklist` and `intent_blacklist` are **deprecated property shims** (`database.py:86`,
 `database.py:102`) that read and write `Client.metadata["skill_blacklist"]` /
 `Client.metadata["intent_blacklist"]` transparently. Setting them emits
-`DeprecationWarning`. `message_blacklist` is not part of the `Client` data model — no
+`DeprecationWarning`. `message_blacklist` is not part of the `Client` data model - no
 property, no metadata carry-forward.
 
 **Legacy constructor kwargs** are accepted via a wrapped `__init__`
@@ -163,11 +163,11 @@ property, no metadata carry-forward.
 
 - `skill_blacklist`, `intent_blacklist`: auto-migrated into `metadata` with a
   `DeprecationWarning`.
-- `message_blacklist`: accepted and discarded with a `DeprecationWarning`; the value
-  is dropped. (The kwarg surface stays so backends passing it positionally don't
+- `message_blacklist`: accepted and discarded with a `DeprecationWarning`. The value
+  is dropped. (The kwarg surface stays so backends that pass it positionally do not
   crash.)
 
-### `metadata` — plugin-specific extension point
+### `metadata` - plugin-specific extension point
 
 `metadata` is a free-form dict that plugins can use to attach arbitrary per-client
 context (routing hints, auth metadata, feature flags, telemetry tags, etc.) without
@@ -179,7 +179,7 @@ ways:
 - **Legacy blacklist fields** (`skill_blacklist`, `intent_blacklist`) found as top-level
   JSON keys are silently migrated into `metadata` with a `DeprecationWarning`, so
   existing on-disk JSON databases keep loading without manual migration. Source:
-  `database.py:153`. **`message_blacklist`** top-level keys are dropped silently — the
+  `database.py:153`. **`message_blacklist`** top-level keys are dropped silently - the
   field is gone for good and the data is not carried forward.
 - **Any other unknown top-level key** is folded into `metadata` so plugin-added fields
   do not break deserialization. Explicit `metadata` dict entries win on collision.
@@ -193,16 +193,16 @@ signalling an upstream serializer bug via a missing-key outcome rather than a cr
 
 `AbstractDB` declares a `SCHEMA_VERSION: ClassVar[int]` constant (currently
 `2`) and a non-abstract `migrate(self, from_version: int)` hook
-(`database.py:368`). The default implementation is a no-op; backends opt in
+(`database.py:368`). The default implementation is a no-op. Backends opt in
 by overriding it.
 
 **Contract for backend authors:**
 
-1. Persist the current schema version somewhere backend-native — `PRAGMA
+1. Persist the current schema version somewhere backend-native - `PRAGMA
    user_version` for SQLite, a sentinel key (`hivemind:schema_version`) for
    Redis, a top-level `__schema_version__` field for JSON files, etc.
-2. At backend init (typically `__post_init__`), read the persisted version;
-   if it is lower than `AbstractDB.SCHEMA_VERSION`, call
+2. At backend init (typically `__post_init__`), read the persisted version.
+   If it is lower than `AbstractDB.SCHEMA_VERSION`, call
    `self.migrate(from_version=stored)` and then write the new version.
 3. `migrate()` MUST be **idempotent and crash-safe**. A partial migration
    interrupted by a crash must produce the same final state when re-run.
@@ -211,9 +211,9 @@ by overriding it.
 
 | from → to | What the backend must do |
 |---|---|
-| `1 → 2` | Move legacy top-level OVOS blacklist fields (`skill_blacklist`, `intent_blacklist`) into each `Client.metadata` dict (`setdefault` — never clobber an explicit metadata value), then drop the legacy storage. **`message_blacklist`** is dropped without carry-forward (the field was removed from the data model entirely; backends MAY still persist it in `metadata` if they like, but it is no longer a load-bearing key). |
+| `1 → 2` | Move legacy top-level OVOS blacklist fields (`skill_blacklist`, `intent_blacklist`) into each `Client.metadata` dict (`setdefault`, so it never clobbers an explicit metadata value). Then drop the legacy storage. **`message_blacklist`** is dropped without carry-forward. The field was removed from the data model entirely. Backends MAY still persist it in `metadata`, but it is no longer a load-bearing key. |
 
-The legacy field names map 1:1 to keys under `metadata` — this is what the
+The legacy field names map 1:1 to keys under `metadata` - this is what the
 `Client.skill_blacklist` etc. property shims read from
 (`database.py:87`–`140`).
 
@@ -224,12 +224,12 @@ The contract surface that makes this work:
 
 - `Client.__init__` accepts the legacy kwargs `skill_blacklist`,
   `intent_blacklist`, and `message_blacklist`. The first two are migrated into
-  `metadata` with a `DeprecationWarning`; the third is discarded with a
+  `metadata` with a `DeprecationWarning`. The third is discarded with a
   `DeprecationWarning`. `Client.deserialize` applies the same rules to
   top-level keys in on-disk records.
 - Backend `migrate()` implementations gate on
   `getattr(AbstractDB, "SCHEMA_VERSION", 1)`, so a backend can run against any
-  HPM — missing constant ⇒ skip migration.
+  HPM - missing constant ⇒ skip migration.
 - Each backend tracks its own schema version natively (SQLite
   `PRAGMA user_version`, Redis sentinel key, JsonDB sibling file). Backends
   migrate independently.
@@ -240,7 +240,7 @@ The contract surface that makes this work:
 ---
 
 Existing third-party backends that don't override `migrate()` continue to
-work — they just won't clean up legacy on-disk shape. The
+work - they just won't clean up legacy on-disk shape. The
 `@property` shims on `Client` ensure read-path code keeps functioning
 regardless of whether migration has run.
 
@@ -263,3 +263,6 @@ Source: `hivemind_plugin_manager/protocols.py:35`
 `hm_protocol` is a forward reference to `HiveMindListenerProtocol` (from `hivemind-core`).
 It is `None` during unit tests and during construction when the protocol is passed as a
 constructor argument to `HiveMindListenerProtocol` (which assigns `self` back afterward).
+
+---
+[← Getting Started](getting-started.md) · [Home](README.md) · [API Reference →](api-reference.md)

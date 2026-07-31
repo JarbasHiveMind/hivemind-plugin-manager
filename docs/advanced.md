@@ -53,7 +53,7 @@ Source: `hivemind_plugin_manager/__init__.py:33`
 
 The factory uses `issubclass` against `AbstractRemoteDB` at instantiation time. This means:
 
-- Callers can always pass `host` and `port` — they are silently dropped for local plugins.
+- Callers can always pass `host` and `port` - they are silently dropped for local plugins.
 - A plugin that subclasses `AbstractRemoteDB` but ignores `host`/`port` in its own
   `__init__` is fine; the values are passed as kwargs and Python discards them if the
   signature includes `**kwargs` or if the dataclass field is declared with a default.
@@ -78,7 +78,7 @@ Source: `hivemind_plugin_manager/protocols.py:41`
 
 `NodeIdentity` comes from `hivemind-bus-client`. It holds the cryptographic identity (key
 pair, name, UUID) of the current HiveMind node. A fresh `NodeIdentity()` is returned when
-the protocol is not yet attached to a `HiveMindListenerProtocol` — this is the expected
+the protocol is not yet attached to a `HiveMindListenerProtocol` - this is the expected
 state during unit tests and during early construction.
 
 ---
@@ -98,7 +98,7 @@ self.binary_protocol.hm_protocol = self
 
 This is why the protocols' `_SubProtocol` property helpers always guard with
 `if not self.hm_protocol`. Plugin code that calls `self.database` or `self.clients` during
-`__post_init__` will get `None` / `{}` — this is expected. Access them in handler methods
+`__post_init__` will get `None` / `{}` - this is expected. Access them in handler methods
 that are called after construction.
 
 The comment in the source is explicit:
@@ -141,7 +141,7 @@ verifies this behaviour at `tests/test_database.py:185`.
 HPM declares no version constraints on its plugin implementations. The entry-point contract
 is purely structural: a class that subclasses the right abstract base and implements the
 required methods is a valid plugin. HPM does not check class hierarchies at discovery
-time — it only calls `entry_point.load()`. Type-safety is the plugin author's
+time - it only calls `entry_point.load()`. Type-safety is the plugin author's
 responsibility.
 
 The `_iter_entrypoints` fallback (`__init__.py:92`) ensures compatibility across Python
@@ -166,6 +166,9 @@ When a `Client` is created with an empty `allowed_types`, `__post_init__` popula
 
 Source: `hivemind_plugin_manager/database.py:60`
 
-Additionally, `"recognizer_loop:utterance"` is always appended even when the caller
-provides a custom list (`database.py:68`). This ensures satellite devices can always send
+Also, `"recognizer_loop:utterance"` is always appended even when the caller
+provides a custom list (`database.py:68`). This lets satellite devices always send
 utterances regardless of how `allowed_types` was configured.
+
+---
+[← API Reference](api-reference.md) · [Home](README.md) · [Contributing →](contributing.md)
