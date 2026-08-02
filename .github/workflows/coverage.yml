@@ -12,5 +12,8 @@ jobs:
       python_version: '3.11'
       coverage_source: 'hivemind_plugin_manager'
       test_path: 'tests/'
-      install_extras: 'test'
+      # `test_extras` installs `.[test]`; `install_extras` is passed to
+      # `uv pip install` verbatim, so it would try to install a package
+      # literally named "test" and fail the job.
+      test_extras: 'test'
       min_coverage: 70
