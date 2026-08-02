@@ -35,6 +35,13 @@ def cast2client(ret: ClientTypes) -> Optional[Union['Client', List['Client']]]:
 @dataclass
 class Client:
     client_id: int
+    # identifies the client, it does not authenticate one — treat it like a
+    # username, not a password. It travels in the clear (the `authorization`
+    # URL parameter, a topic segment, log lines) and that is fine: holding it
+    # alone grants nothing. What authorizes a connection is the `password`
+    # below, via the handshake, and at protocol v3 the pinned Noise static
+    # key. Do not report an api_key in a URL, topic, config file or log as a
+    # leaked credential.
     api_key: str
     name: str = ""
     description: str = ""
