@@ -197,4 +197,4 @@ handler = BinaryDataHandlerProtocolFactory.create(
 
 | Package | Entry-point name |
 |---|---|
-| `hivemind-listener` | `hivemind-audio-binary-protocol-plugin` |
+| `hivemind-audio-binary-protocol` | `hivemind-audio-binary-protocol-plugin` |
