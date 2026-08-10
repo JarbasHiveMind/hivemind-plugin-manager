@@ -282,7 +282,7 @@ Source: `hivemind_plugin_manager/protocols.py:61`
 
 Fields: inherits `_SubProtocol` fields plus `bus: Union[FakeBus, MessageBusClient]`.
 
-No abstract methods. Subclasses add their own message-handling methods.
+Abstract method: `natural_language_query(utterance, lang) -> Iterator[Optional[str]]`, a generator yielding answer chunks then a final `None`. Concrete overridables: `get_bus(client=None)` and `answer_query(utterance, lang, client=None)` — hivemind-core calls `answer_query`, whose default delegates to `natural_language_query`.
 
 ---
 
@@ -317,7 +317,7 @@ list with signatures.
 
 ## `hivemind_plugin_manager/tui.py`
 
-CLI entry point registered as `hpm` console script (`setup.py:54`).
+CLI entry point registered as the `hpm` console script (`pyproject.toml`, `[project.scripts]`).
 
 | Command | Usage | Source |
 |---|---|---|

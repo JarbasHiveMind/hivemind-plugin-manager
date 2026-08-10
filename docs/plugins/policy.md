@@ -94,7 +94,7 @@ The return value of `review()` and `review_binary()`.
 Source: `hivemind_plugin_manager/policy.py:73`
 
 ```python
-@dataclass
+@dataclass(frozen=True)
 class Verdict:
     denied: bool = False
     code: str = ""
@@ -194,19 +194,26 @@ In your package's `setup.py` / `pyproject.toml`, register under
 ```
 
 Operators then enable your policy in `hivemind-core`'s `policy` config
-block:
+block. Each chain entry is an **object**, not a bare string: `PolicyChain.from_config`
+reads `module`, `config` and `optional` off it, so a plain string raises
+`AttributeError` and the server fails to start. Per-plugin settings go in that
+entry's `config`, not in a sibling key. `optional: true` downgrades that one
+policy's exceptions to an allow instead of failing closed.
 
 ```json
 {
   "policy": {
     "chain": [
-      "hivemind-client-acl-policy",
-      "hivemind-intent-quota-policy"
-    ],
-    "hivemind-intent-quota-policy": {
-      "per_day": 1000,
-      "redis_url": "redis://localhost:6379/0"
-    }
+      {"module": "hivemind-client-acl-policy"},
+      {
+        "module": "hivemind-intent-quota-policy",
+        "config": {
+          "per_day": 1000,
+          "redis_url": "redis://localhost:6379/0"
+        },
+        "optional": false
+      }
+    ]
   }
 }
 ```
@@ -235,7 +242,8 @@ class IntentQuotaPolicy(PolicyPlugin):
     def review(self, message, client):
         if message.msg_type != "recognizer_loop:utterance":
             return Verdict.allow()
-        account = client.user.metadata.get("account_id") or client.key
+        user = client.resolve_user(self.hm_protocol.db)
+        account = (user.metadata.get("account_id") if user else None) or client.key
         used = self.store.get(account, window="1d")
         if used >= self.per_day:
             return Verdict.deny(
@@ -250,7 +258,8 @@ class IntentQuotaPolicy(PolicyPlugin):
         # denials don't increment the counter.
         if message.msg_type != "recognizer_loop:utterance":
             return
-        account = client.user.metadata.get("account_id") or client.key
+        user = client.resolve_user(self.hm_protocol.db)
+        account = (user.metadata.get("account_id") if user else None) or client.key
         self.store.incr(account, window="1d")
 ```
 

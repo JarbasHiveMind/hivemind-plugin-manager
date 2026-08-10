@@ -27,7 +27,7 @@ package's `setup.py` (or `pyproject.toml`):
 ```ini
 # pyproject.toml
 [project.entry-points."hivemind.database"]
-hivemind-json-db-plugin = "json_database.hpm:JsonDB"
+hivemind-json-db-plugin = "hivemind_json_database:JsonDB"
 ```
 
 or in `setup.py`:

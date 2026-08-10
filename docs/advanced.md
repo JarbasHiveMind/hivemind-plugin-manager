@@ -144,31 +144,31 @@ required methods is a valid plugin. HPM does not check class hierarchies at disc
 time - it only calls `entry_point.load()`. Type-safety is the plugin author's
 responsibility.
 
-The `_iter_entrypoints` fallback (`__init__.py:92`) ensures compatibility across Python
-3.8+ environments where `importlib.metadata` behaviour differs.
+Discovery goes through the stdlib `importlib.metadata.entry_points(group=...)`
+directly. There is no `pkg_resources` fallback and no `_iter_entrypoints` helper.
 
 ---
 
-## `allowed_types` Default Set
+## `allowed_types` is deny-by-default
 
-When a `Client` is created with an empty `allowed_types`, `__post_init__` populates it with:
+`allowed_types` is the canonical admission whitelist, enforced by
+`MessageTypeACLPolicy` in hivemind-core. An **empty list denies every message**.
 
-```python
-["recognizer_loop:utterance",
- "recognizer_loop:record_begin",
- "recognizer_loop:record_end",
- "recognizer_loop:audio_output_start",
- "recognizer_loop:audio_output_end",
- "recognizer_loop:b64_transcribe",
- "speak:b64_audio",
- "ovos.common_play.SEI.get.response"]
+`Client.__post_init__` does type validation only. It does **not** substitute a
+default set, and it does **not** append `recognizer_loop:utterance` to a custom
+list. Grant access explicitly:
+
+```bash
+hivemind-core allow-msg recognizer_loop:utterance <node_id>
 ```
 
-Source: `hivemind_plugin_manager/database.py:60`
+or pass `allowed_types=[...]` when constructing the `Client`.
 
-Also, `"recognizer_loop:utterance"` is always appended even when the caller
-provides a custom list (`database.py:68`). This lets satellite devices always send
-utterances regardless of how `allowed_types` was configured.
+> ⚠️ Earlier versions of this page documented an automatic default set of eight
+> message types and an unconditional `recognizer_loop:utterance` append. Neither
+> ever survived HiveMind-core#85, and relying on that behaviour leaves a client
+> that is denied on every message. The whitelist is deny-by-default with no
+> implicit grants.
 
 ---
 [← API Reference](api-reference.md) · [Home](README.md) · [Contributing →](contributing.md)
