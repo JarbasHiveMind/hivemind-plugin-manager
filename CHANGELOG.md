@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0a4](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a4) (2026-08-10)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a3...0.9.0a4)
+
+**Merged pull requests:**
+
+- docs: drop misleading listener terminology [\#52](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/52) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.9.0a3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a3) (2026-08-02)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a2...0.9.0a3)
@@ -95,6 +103,120 @@
 **Merged pull requests:**
 
 - fix: modernize importlib [\#11](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/11) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.5.0](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.5.0) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.5.0a1...0.5.0)
+
+## [0.5.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.5.0a1) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a2...0.5.0a1)
+
+**Merged pull requests:**
+
+- feat: client metadata support [\#23](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/23) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.4.1a2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a2) (2026-05-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.1a1...0.4.1a2)
+
+**Merged pull requests:**
+
+- Release 0.4.1a2 [\#25](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/25) ([github-actions[bot]](https://github.com/apps/github-actions))
+- ci: adopt shared OpenVoiceOS/gh-automations workflows [\#24](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/24) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.4.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.1a1) (2025-12-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.0...0.4.1a1)
+
+**Merged pull requests:**
+
+- Release 0.4.1a1 [\#13](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/13) ([github-actions[bot]](https://github.com/apps/github-actions))
+- chore: Configure Renovate [\#12](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/12) ([renovate[bot]](https://github.com/apps/renovate))
+
+## [0.4.0](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.0) (2024-12-31)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.4.0a1...0.4.0)
+
+**Merged pull requests:**
+
+- Release 0.4.0a1 [\#10](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/10) ([github-actions[bot]](https://github.com/apps/github-actions))
+
+## [0.4.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.4.0a1) (2024-12-30)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.3.0...0.4.0a1)
+
+**Merged pull requests:**
+
+- feat:tui [\#9](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/9) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.3.0](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.3.0) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.3.0a1...0.3.0)
+
+**Merged pull requests:**
+
+- Release 0.3.0a1 [\#8](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/8) ([github-actions[bot]](https://github.com/apps/github-actions))
+
+## [0.3.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.3.0a1) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.2.0...0.3.0a1)
+
+**Merged pull requests:**
+
+- feat: get\_class factory methods [\#7](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/7) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.2.0](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.2.0) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.2.0a1...0.2.0)
+
+**Merged pull requests:**
+
+- Release 0.2.0a1 [\#6](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/6) ([github-actions[bot]](https://github.com/apps/github-actions))
+
+## [0.2.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.2.0a1) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.1.0...0.2.0a1)
+
+**Merged pull requests:**
+
+- feat: add client callbacks [\#5](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/5) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.1.0](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.1.0) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.1.0a1...0.1.0)
+
+**Merged pull requests:**
+
+- Release 0.1.0a1 [\#4](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/4) ([github-actions[bot]](https://github.com/apps/github-actions))
+
+## [0.1.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.1.0a1) (2024-12-29)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.2...0.1.0a1)
+
+**Merged pull requests:**
+
+- feat: add plugin factory classes [\#3](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/3) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.0.2) (2024-12-28)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.2a1...0.0.2)
+
+**Merged pull requests:**
+
+- Release 0.0.2a1 [\#2](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/2) ([github-actions[bot]](https://github.com/apps/github-actions))
+
+## [0.0.2a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.0.2a1) (2024-12-28)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.0.1...0.0.2a1)
+
+**Merged pull requests:**
+
+- fix: circular imports because of typing [\#1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/1) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.0.1) (2024-12-28)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/725737e28b1e31594e12fd50f89b810f9cf5012a...0.0.1)
 
 
 
