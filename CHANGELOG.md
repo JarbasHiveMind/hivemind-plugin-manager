@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0a6](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a6) (2026-08-10)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a5...0.9.0a6)
+
+**Merged pull requests:**
+
+- docs: correct claims that no longer match the code [\#56](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/56) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.9.0a5](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a5) (2026-08-10)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a4...0.9.0a5)
