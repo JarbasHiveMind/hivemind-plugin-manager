@@ -6,7 +6,7 @@
 > | [API Reference](docs/api-reference.md)
 > | [Contributing](docs/contributing.md)
 
-The **HiveMind Plugin Manager (HPM)** discovers, manages, and loads plugins for the HiveMind ecosystem. It defines plugin types for databases, network protocols, agent protocols, and binary data handlers. HPM loads these plugins at runtime, so HiveMind agents can swap a backend without changing core code.
+The **HiveMind Plugin Manager (HPM)** discovers, manages, and loads plugins for the HiveMind ecosystem. It defines plugin types for databases, network protocols, agent protocols, binary data handlers, and admission policies. HPM loads these plugins at runtime, so HiveMind agents can swap a backend without changing core code.
 
 ## Features
 

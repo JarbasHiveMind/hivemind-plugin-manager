@@ -94,7 +94,7 @@ The return value of `review()` and `review_binary()`.
 Source: `hivemind_plugin_manager/policy.py:73`
 
 ```python
-@dataclass
+@dataclass(frozen=True)
 class Verdict:
     denied: bool = False
     code: str = ""
@@ -194,19 +194,30 @@ In your package's `setup.py` / `pyproject.toml`, register under
 ```
 
 Operators then enable your policy in `hivemind-core`'s `policy` config
-block:
+block. Each chain entry is an **object**, not a bare string: `PolicyChain.from_config`
+reads `module`, `config` and `optional` off it, so a plain string raises
+`AttributeError`. hivemind-core catches that, logs the failure and installs
+`DenyAllPolicy`, so the server starts but denies every message until the config
+is fixed. `hivemind-core policy list` and `policy test` surface the error directly. Per-plugin settings go in that
+entry's `config`, not in a sibling key. `optional: true` means exceptions from that policy are logged and the chain
+continues past it — the policy is skipped, it does not contribute an allow verdict,
+and later policies still run. A plugin that fails to *load* aborts chain
+construction regardless of `optional`.
 
 ```json
 {
   "policy": {
     "chain": [
-      "hivemind-client-acl-policy",
-      "hivemind-intent-quota-policy"
-    ],
-    "hivemind-intent-quota-policy": {
-      "per_day": 1000,
-      "redis_url": "redis://localhost:6379/0"
-    }
+      {"module": "hivemind-client-acl-policy"},
+      {
+        "module": "hivemind-intent-quota-policy",
+        "config": {
+          "per_day": 1000,
+          "redis_url": "redis://localhost:6379/0"
+        },
+        "optional": false
+      }
+    ]
   }
 }
 ```
@@ -235,7 +246,8 @@ class IntentQuotaPolicy(PolicyPlugin):
     def review(self, message, client):
         if message.msg_type != "recognizer_loop:utterance":
             return Verdict.allow()
-        account = client.user.metadata.get("account_id") or client.key
+        user = client.resolve_user(self.hm_protocol.db)
+        account = (user.metadata.get("account_id") if user else None) or client.key
         used = self.store.get(account, window="1d")
         if used >= self.per_day:
             return Verdict.deny(
@@ -250,7 +262,8 @@ class IntentQuotaPolicy(PolicyPlugin):
         # denials don't increment the counter.
         if message.msg_type != "recognizer_loop:utterance":
             return
-        account = client.user.metadata.get("account_id") or client.key
+        user = client.resolve_user(self.hm_protocol.db)
+        account = (user.metadata.get("account_id") if user else None) or client.key
         self.store.incr(account, window="1d")
 ```
 
