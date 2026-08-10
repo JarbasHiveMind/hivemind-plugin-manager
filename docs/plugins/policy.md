@@ -196,9 +196,13 @@ In your package's `setup.py` / `pyproject.toml`, register under
 Operators then enable your policy in `hivemind-core`'s `policy` config
 block. Each chain entry is an **object**, not a bare string: `PolicyChain.from_config`
 reads `module`, `config` and `optional` off it, so a plain string raises
-`AttributeError` and the server fails to start. Per-plugin settings go in that
-entry's `config`, not in a sibling key. `optional: true` downgrades that one
-policy's exceptions to an allow instead of failing closed.
+`AttributeError`. hivemind-core catches that, logs the failure and installs
+`DenyAllPolicy`, so the server starts but denies every message until the config
+is fixed. `hivemind-core policy list` and `policy test` surface the error directly. Per-plugin settings go in that
+entry's `config`, not in a sibling key. `optional: true` means exceptions from that policy are logged and the chain
+continues past it — the policy is skipped, it does not contribute an allow verdict,
+and later policies still run. A plugin that fails to *load* aborts chain
+construction regardless of `optional`.
 
 ```json
 {
