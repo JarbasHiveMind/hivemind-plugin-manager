@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0a8](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a8) (2026-09-04)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a7...0.9.0a8)
+
+**Merged pull requests:**
+
+- refactor: drop the dead Client.crypto\_key field [\#60](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/60) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.9.0a7](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a7) (2026-08-15)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a6...0.9.0a7)
