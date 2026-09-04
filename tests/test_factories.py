@@ -143,7 +143,7 @@ class TestBinaryDataHandlerProtocolFactory(unittest.TestCase):
 
 
 class TestFindPlugins(unittest.TestCase):
-    @patch("hivemind_plugin_manager._iter_entrypoints")
+    @patch("hivemind_plugin_manager.entry_points")
     def test_find_plugins_specific_type(self, mock_iter):
         class _EP:
             name = "fake"
@@ -154,13 +154,13 @@ class TestFindPlugins(unittest.TestCase):
         self.assertIn("fake", result)
         self.assertIs(result["fake"], _FakeLocalDB)
 
-    @patch("hivemind_plugin_manager._iter_entrypoints")
+    @patch("hivemind_plugin_manager.entry_points")
     def test_find_plugins_string_type(self, mock_iter):
         mock_iter.return_value = iter([])
         result = find_plugins("hivemind.database")
         self.assertEqual(result, {})
 
-    @patch("hivemind_plugin_manager._iter_entrypoints")
+    @patch("hivemind_plugin_manager.entry_points")
     def test_find_plugins_no_type_iterates_all(self, mock_iter):
         mock_iter.return_value = iter([])
         result = find_plugins()
@@ -168,7 +168,7 @@ class TestFindPlugins(unittest.TestCase):
         # called once per HiveMindPluginTypes member
         self.assertEqual(mock_iter.call_count, len(HiveMindPluginTypes))
 
-    @patch("hivemind_plugin_manager._iter_entrypoints")
+    @patch("hivemind_plugin_manager.entry_points")
     def test_find_plugins_swallows_load_errors(self, mock_iter):
         find_plugins._errored = []  # reset
 

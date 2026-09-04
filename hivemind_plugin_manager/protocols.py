@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict, Any, Union, Optional, Callable
+from typing import Dict, Any, Iterator, List, Union, Optional, Callable
 
 from ovos_bus_client import MessageBusClient
 from ovos_utils.fakebus import FakeBus
@@ -58,13 +58,60 @@ class _SubProtocol:
 
 
 @dataclass
-class AgentProtocol(_SubProtocol):
+class AgentProtocol(_SubProtocol, abc.ABC):
     """protocol to handle Message objects, the payload of HiveMessage objects"""
     bus: Union[FakeBus, MessageBusClient] = dataclasses.field(default_factory=FakeBus)
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None # usually AgentProtocol is passed as kwarg to hm_protocol
                                                              # and only then assigned in hm_protocol.__post_init__
     callbacks: ClientCallbacks = dataclasses.field(default_factory=ClientCallbacks)
+
+    @abc.abstractmethod
+    def natural_language_query(self, utterance: str,
+                               lang: str) -> Iterator[Optional[str]]:
+        """Stream an answer to a natural-language query.
+
+        A generator: ``yield`` each answer chunk — the text of one ``speak`` —
+        as it is produced, then ``yield None`` once to signal end-of-query.
+        Yielding ``None`` immediately (no chunks) means the agent has no answer,
+        and the node escalates the query upstream instead of stalling.
+
+        Streaming lets a satellite start speaking the first sentence while the
+        rest is still being generated — an LLM/persona agent yields sentences as
+        the model produces them; an OVOS agent yields each ``speak`` as it lands
+        and ``None`` when the utterance is handled. This is the mandatory seam
+        hivemind-core's QUERY/CASCADE handlers consume, because *how* an agent
+        answers is backend-specific (a media-only agent just ``yield None``).
+
+        Yields:
+            ``str`` answer chunks, then a final ``None`` end-of-query sentinel.
+        """
+        raise NotImplementedError
+
+    def get_bus(self, client: Optional['HiveMindClientConnection'] = None
+                ) -> Union[FakeBus, MessageBusClient]:
+        """Return the bus a given client's injected messages should land on.
+
+        Default: the single shared agent bus. A *multiplexing* agent (e.g. one
+        isolated brain per access key) overrides this to return a per-client
+        bus; ``hivemind-core`` calls it for every injected message, so per-key
+        routing on the inject path stays transparent and needs no peer-sniffing.
+        """
+        return self.bus
+
+    def answer_query(self, utterance: str, lang: str,
+                     client: Optional['HiveMindClientConnection'] = None
+                     ) -> Iterator[Optional[str]]:
+        """Context-aware entry point for the QUERY/CASCADE streaming path.
+
+        ``natural_language_query`` is the backend primitive (utterance + lang,
+        no caller identity). ``answer_query`` is what ``hivemind-core`` calls,
+        additionally passing the originating ``client`` so a multiplexing agent
+        can dispatch to the right per-key sub-agent. The default ignores the
+        client and delegates to ``natural_language_query``, so existing agents
+        need no changes.
+        """
+        yield from self.natural_language_query(utterance, lang)
 
 @dataclass
 class NetworkProtocol(_SubProtocol):
