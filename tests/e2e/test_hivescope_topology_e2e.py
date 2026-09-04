@@ -85,7 +85,6 @@ class PluginBackedClientDatabase:
                    key: str = "",
                    admin: bool = False,
                    allowed_types: Optional[List[str]] = None,
-                   crypto_key: Optional[str] = None,
                    password: Optional[str] = None,
                    can_escalate: bool = True,
                    can_propagate: bool = True,
@@ -94,8 +93,6 @@ class PluginBackedClientDatabase:
                    skill_blacklist: Optional[List[str]] = None,
                    message_blacklist: Optional[List[str]] = None) -> bool:
         from hivemind_plugin_manager.database import Client
-        if crypto_key is not None:
-            crypto_key = crypto_key[:16]
         metadata = {}
         if skill_blacklist:
             metadata["skill_blacklist"] = list(skill_blacklist)
@@ -107,7 +104,6 @@ class PluginBackedClientDatabase:
             client_id=len(self.db) + 1,
             is_admin=admin,
             allowed_types=allowed_types or [],
-            crypto_key=crypto_key,
             password=password,
             can_escalate=can_escalate,
             can_propagate=can_propagate,
