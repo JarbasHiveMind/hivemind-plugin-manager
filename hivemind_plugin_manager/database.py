@@ -53,7 +53,6 @@ class Client:
     # intent, etc.) live in plugin config or `metadata`, not on the
     # Client row directly. See HiveMind-core#85.
     allowed_types: List[str] = field(default_factory=list)
-    crypto_key: Optional[str] = None
     password: Optional[str] = None
     can_broadcast: bool = True
     can_escalate: bool = True
