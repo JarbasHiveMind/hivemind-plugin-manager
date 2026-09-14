@@ -10,17 +10,34 @@ from ovos_utils.log import LOG
 from hivemind_bus_client.identity import NodeIdentity
 
 
+def _log_name(client: 'HiveMindClientConnection') -> str:
+    """Name a connection in a log line without naming its credential.
+
+    Interpolating the connection itself calls the dataclass ``__repr__``,
+    which includes ``key`` — the access key a satellite authenticates with.
+    These four callbacks run on every connect and every disconnect, and each
+    is installed on the listener, the binary protocol and the agent protocol,
+    so a node at DEBUG wrote the key six times per connection into a log
+    operators paste into bug reports.
+
+    ``peer`` is what the rest of the fleet logs: unique per connection, and
+    it authenticates nothing. A caller that hands in a stand-in object
+    without one still gets a line rather than an AttributeError.
+    """
+    return getattr(client, "peer", None) or "<unknown peer>"
+
+
 def on_disconnect(client: 'HiveMindClientConnection'):
-    LOG.debug(f"callback: client disconnected: {client}")
+    LOG.debug(f"callback: client disconnected: {_log_name(client)}")
 
 def on_connect(client: 'HiveMindClientConnection'):
-    LOG.debug(f"callback: client connected: {client}")
+    LOG.debug(f"callback: client connected: {_log_name(client)}")
 
 def on_invalid_key(client: 'HiveMindClientConnection'):
-    LOG.debug(f"callback: invalid access key: {client}")
+    LOG.debug(f"callback: invalid access key: {_log_name(client)}")
 
 def on_invalid_protocol(client: 'HiveMindClientConnection'):
-    LOG.debug(f"callback: protocol requirements failure: {client}")
+    LOG.debug(f"callback: protocol requirements failure: {_log_name(client)}")
 
 
 @dataclass
