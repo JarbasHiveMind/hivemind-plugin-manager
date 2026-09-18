@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.10.0a1) (2026-09-18)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a8...0.10.0a1)
+
+**Merged pull requests:**
+
+- feat: NetworkProtocol.stop\(\) asks run\(\) to return [\#63](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/63) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.9.0a8](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.9.0a8) (2026-09-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a7...0.9.0a8)
