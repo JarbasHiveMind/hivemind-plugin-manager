@@ -130,6 +130,21 @@ class NetworkProtocol(_SubProtocol):
     def run(self):
         pass
 
+    def stop(self) -> None:
+        """Ask ``run()`` to return.
+
+        Idempotent, callable from any thread, and safe before ``run()``:
+        ``run()`` then returns at once. After it the binding admits no new
+        peer and delivers ``handle_client_disconnected`` for every admitted
+        peer, the disconnect signal HIVEMIND-TRANSPORT-1 §2 owes the node
+        for each peer that leaves.
+
+        This default does nothing. A binding that does not override it keeps
+        its thread when the node shuts down, and the node does not wait for
+        it. The node still ends; the binding just cannot be told to stop.
+        """
+        return None
+
 
 @dataclass
 class BinaryDataHandlerProtocol(_SubProtocol):
