@@ -133,6 +133,42 @@ class TestNetworkProtocol(unittest.TestCase):
         hm = MagicMock(agent_protocol=sentinel)
         self.assertIs(_N(hm_protocol=hm).agent_protocol, sentinel)
 
+    def test_stop_is_not_abstract_and_does_nothing_by_default(self):
+        # a binding written before stop() existed still loads and still
+        # runs; the node just cannot tell it to stop
+        class _Old(NetworkProtocol):
+            def run(self): pass
+        binding = _Old()
+        self.assertIsNone(binding.stop())
+        self.assertIsNone(binding.stop())  # idempotent
+
+    def test_a_binding_overrides_stop_to_end_its_run_loop(self):
+        import threading
+
+        class _Stoppable(NetworkProtocol):
+            def run(self):
+                self._stop_event.wait(timeout=5)
+
+            @property
+            def _stop_event(self):
+                if not hasattr(self, "_event"):
+                    self._event = threading.Event()
+                return self._event
+
+            def stop(self) -> None:
+                self._stop_event.set()
+
+        binding = _Stoppable()
+        thread = threading.Thread(target=binding.run, daemon=True)
+        thread.start()
+        binding.stop()
+        thread.join(timeout=2)
+        self.assertFalse(thread.is_alive(), "run() did not return after stop()")
+        # and a stop before run makes run return at once
+        early = _Stoppable()
+        early.stop()
+        early.run()
+
 
 class TestBinaryDataHandlerProtocol(unittest.TestCase):
     def test_defaults(self):
