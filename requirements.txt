@@ -1,4 +1,4 @@
 hivemind_bus_client
-json_database
+json_database>=0.10.2a1
 ovos-bus-client
 ovos-utils

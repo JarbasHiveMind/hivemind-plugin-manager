@@ -43,9 +43,12 @@ class TestClientDeserialize(unittest.TestCase):
         c = Client.deserialize(self._base(metadata=None))
         self.assertEqual(c.metadata, {})
 
-    def test_non_dict_metadata_raises(self):
-        with self.assertRaises(TypeError):
-            Client.deserialize(self._base(metadata="nope"))
+    def test_non_dict_metadata_coerced_to_empty(self):
+        # consistent with Client.__post_init__: a non-dict metadata payload
+        # falls back to {} so on-disk records keep loading.
+        for bad in ("nope", ["a"], 42):
+            c = Client.deserialize(self._base(metadata=bad))
+            self.assertEqual(c.metadata, {})
 
     def test_deserialize_does_not_mutate_input(self):
         payload = self._base(weird=42, metadata={"a": 1})

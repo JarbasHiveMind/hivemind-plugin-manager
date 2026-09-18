@@ -2,9 +2,36 @@ import enum
 from typing import Optional, Dict, Any, Union, Type
 
 from ovos_utils.log import LOG
-
+from importlib.metadata import entry_points
 from hivemind_plugin_manager.database import AbstractDB, AbstractRemoteDB
-from hivemind_plugin_manager.protocols import AgentProtocol, BinaryDataHandlerProtocol, NetworkProtocol
+from hivemind_plugin_manager.policy import (DenyCodes, Mutation, PolicyPlugin,
+                                             Verdict)
+from hivemind_plugin_manager.protocols import (AgentProtocol,
+                                               BinaryDataHandlerProtocol,
+                                               NetworkProtocol)
+
+# Public re-exports — ``Mutation`` and ``Verdict`` are only referenced
+# via this module by downstream plugin authors, so the imports above
+# look unused to a flake8/ruff F401 pass. Listing them here marks them
+# as the package's public surface and silences the warning.
+__all__ = [
+    "AbstractDB",
+    "AbstractRemoteDB",
+    "AgentProtocol",
+    "AgentProtocolFactory",
+    "BinaryDataHandlerProtocol",
+    "BinaryDataHandlerProtocolFactory",
+    "DatabaseFactory",
+    "DenyCodes",
+    "HiveMindPluginTypes",
+    "Mutation",
+    "NetworkProtocol",
+    "NetworkProtocolFactory",
+    "PolicyPlugin",
+    "PolicyPluginFactory",
+    "Verdict",
+    "find_plugins",
+]
 
 
 class HiveMindPluginTypes(str, enum.Enum):
@@ -12,6 +39,7 @@ class HiveMindPluginTypes(str, enum.Enum):
     NETWORK_PROTOCOL = "hivemind.network.protocol"
     AGENT_PROTOCOL = "hivemind.agent.protocol"
     BINARY_PROTOCOL = "hivemind.binary.protocol"
+    POLICY = "hivemind.policy"
 
 
 class DatabaseFactory:
@@ -89,20 +117,26 @@ class BinaryDataHandlerProtocolFactory:
         return plugin(config=config, hm_protocol=hm_protocol, agent_protocol=agent_protocol)
 
 
-def _iter_entrypoints(plug_type: Optional[str]):
+class PolicyPluginFactory:
+    """Discover and instantiate policy plugins registered under
+    ``hivemind.policy``. Consumed by ``hivemind-core``'s chain runner
+    when assembling the configured ``policy.chain``.
     """
-    Return an iterator containing all entrypoints of the requested type
-    @param plug_type: entrypoint name to load
-    @return: iterator of all entrypoints
-    """
-    try:
-        from importlib_metadata import entry_points
-        for entry_point in entry_points(group=plug_type):
-            yield entry_point
-    except ImportError:
-        import pkg_resources
-        for entry_point in pkg_resources.iter_entry_points(plug_type):
-            yield entry_point
+
+    @classmethod
+    def get_class(cls, plugin_name: str) -> Type[PolicyPlugin]:
+        plugins = find_plugins(HiveMindPluginTypes.POLICY)
+        if plugin_name not in plugins:
+            raise KeyError(f"'{plugin_name}' not found. Available plugins: {list(plugins.keys())}")
+        return plugins[plugin_name]
+
+    @classmethod
+    def create(cls, plugin_name: str,
+               config: Optional[Dict[str, Any]] = None,
+               hm_protocol: Optional['HiveMindListenerProtocol'] = None) -> PolicyPlugin:
+        config = config or {}
+        plugin = cls.get_class(plugin_name)
+        return plugin(config=config, hm_protocol=hm_protocol)
 
 
 def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
@@ -123,7 +157,7 @@ def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
     else:
         plugs = plug_type
     for plug in plugs:
-        for entry_point in _iter_entrypoints(plug):
+        for entry_point in entry_points(group=plug):
             try:
                 entrypoints[entry_point.name] = entry_point.load()
                 if entry_point.name not in entrypoints:

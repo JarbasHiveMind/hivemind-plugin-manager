@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hivemind-plugin-manager"
+description = "plugin manager for hivemind-core"
+readme = "README.md"
+authors = [{ name = "jarbasAI", email = "jarbasai@mailfence.com" }]
+license = "Apache-2.0"
+requires-python = ">=3.10"
+keywords = ["hivemind", "plugins", "plugin-manager"]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/JarbasHiveMind/hivemind-plugin-manager"
+
+[project.optional-dependencies]
+# The e2e suite (tests/e2e/) resolves REAL published plugins through the
+# factories and wires them into an in-process hivescope hive. The prerelease
+# floors below let a plain `pip install .[test]` resolve the 2.x hivemind
+# stack with no --pre (PEP 440: a prerelease floor opts that package into
+# prereleases); hivemind-core is test-only here — it ships the canonical
+# policy plugins the PolicyPluginFactory tests resolve.
+test = [
+    "pytest",
+    "hivescope>=0.5.2a1",
+    "ovos-bus-client>=2.0.0a3,<3.0.0",
+    "ovos-plugin-manager>=2.4.1a1,<3.0.0",
+    "ovos-utils>=0.0.40",
+    "hivemind-core>=4.6.7a1",
+    "hivemind-websocket-protocol>=0.2.1a1",
+    "hivemind-ovos-agent-plugin>=0.3.2a1",
+    "hivemind-audio-binary-protocol>=2.1.6a3",
+    "ovos-simple-listener>=0.3.1a1",
+    "hivemind-json-db-plugin>=0.0.3a2",
+]
+
+[project.scripts]
+hpm = "hivemind_plugin_manager.tui:cli"
+
+[tool.setuptools]
+packages = ["hivemind_plugin_manager"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "hivemind_plugin_manager.version.__version__" }
+dependencies = { file = ["requirements.txt"] }

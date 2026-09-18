@@ -53,7 +53,7 @@ Source: `hivemind_plugin_manager/__init__.py:33`
 
 The factory uses `issubclass` against `AbstractRemoteDB` at instantiation time. This means:
 
-- Callers can always pass `host` and `port` — they are silently dropped for local plugins.
+- Callers can always pass `host` and `port` - they are silently dropped for local plugins.
 - A plugin that subclasses `AbstractRemoteDB` but ignores `host`/`port` in its own
   `__init__` is fine; the values are passed as kwargs and Python discards them if the
   signature includes `**kwargs` or if the dataclass field is declared with a default.
@@ -78,7 +78,7 @@ Source: `hivemind_plugin_manager/protocols.py:41`
 
 `NodeIdentity` comes from `hivemind-bus-client`. It holds the cryptographic identity (key
 pair, name, UUID) of the current HiveMind node. A fresh `NodeIdentity()` is returned when
-the protocol is not yet attached to a `HiveMindListenerProtocol` — this is the expected
+the protocol is not yet attached to a `HiveMindListenerProtocol` - this is the expected
 state during unit tests and during early construction.
 
 ---
@@ -98,7 +98,7 @@ self.binary_protocol.hm_protocol = self
 
 This is why the protocols' `_SubProtocol` property helpers always guard with
 `if not self.hm_protocol`. Plugin code that calls `self.database` or `self.clients` during
-`__post_init__` will get `None` / `{}` — this is expected. Access them in handler methods
+`__post_init__` will get `None` / `{}` - this is expected. Access them in handler methods
 that are called after construction.
 
 The comment in the source is explicit:
@@ -141,31 +141,34 @@ verifies this behaviour at `tests/test_database.py:185`.
 HPM declares no version constraints on its plugin implementations. The entry-point contract
 is purely structural: a class that subclasses the right abstract base and implements the
 required methods is a valid plugin. HPM does not check class hierarchies at discovery
-time — it only calls `entry_point.load()`. Type-safety is the plugin author's
+time - it only calls `entry_point.load()`. Type-safety is the plugin author's
 responsibility.
 
-The `_iter_entrypoints` fallback (`__init__.py:92`) ensures compatibility across Python
-3.8+ environments where `importlib.metadata` behaviour differs.
+Discovery goes through the stdlib `importlib.metadata.entry_points(group=...)`
+directly. There is no `pkg_resources` fallback and no `_iter_entrypoints` helper.
 
 ---
 
-## `allowed_types` Default Set
+## `allowed_types` is deny-by-default
 
-When a `Client` is created with an empty `allowed_types`, `__post_init__` populates it with:
+`allowed_types` is the canonical admission whitelist, enforced by
+`MessageTypeACLPolicy` in hivemind-core. An **empty list denies every message**.
 
-```python
-["recognizer_loop:utterance",
- "recognizer_loop:record_begin",
- "recognizer_loop:record_end",
- "recognizer_loop:audio_output_start",
- "recognizer_loop:audio_output_end",
- "recognizer_loop:b64_transcribe",
- "speak:b64_audio",
- "ovos.common_play.SEI.get.response"]
+`Client.__post_init__` does type validation only. It does **not** substitute a
+default set, and it does **not** append `recognizer_loop:utterance` to a custom
+list. Grant access explicitly:
+
+```bash
+hivemind-core allow-msg recognizer_loop:utterance <node_id>
 ```
 
-Source: `hivemind_plugin_manager/database.py:60`
+or pass `allowed_types=[...]` when constructing the `Client`.
 
-Additionally, `"recognizer_loop:utterance"` is always appended even when the caller
-provides a custom list (`database.py:68`). This ensures satellite devices can always send
-utterances regardless of how `allowed_types` was configured.
+> ⚠️ Earlier versions of this page documented an automatic default set of eight
+> message types and an unconditional `recognizer_loop:utterance` append. Neither
+> ever survived HiveMind-core#85, and relying on that behaviour leaves a client
+> that is denied on every message. The whitelist is deny-by-default with no
+> implicit grants.
+
+---
+[← API Reference](api-reference.md) · [Home](README.md) · [Contributing →](contributing.md)
