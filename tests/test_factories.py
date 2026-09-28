@@ -181,5 +181,165 @@ class TestFindPlugins(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+class TestPluginIdIsRecorded(unittest.TestCase):
+    """The entry-point name a plugin was loaded under reaches the instance.
+
+    hivemind-core stamps the agent plugin's id into the Layer-1 ``destination``
+    of an injected message, so the label a human reads names the agent that
+    answered. Before this, the name was known only inside ``create`` and thrown
+    away.
+    """
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_the_agent_factory_records_the_entry_point_name(self, mock_iter):
+        class _EP:
+            name = "hivemind-ovos-agent-plugin"
+            def load(self):
+                return _FakeAgentProtocol
+        mock_iter.return_value = iter([_EP()])
+        agent = AgentProtocolFactory.create("hivemind-ovos-agent-plugin")
+        self.assertEqual(agent.plugin_id, "hivemind-ovos-agent-plugin")
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_a_plugin_with_its_own_init_is_not_broken_by_the_label(self,
+                                                                   mock_iter):
+        # _FakeAgentProtocol defines __init__(config, bus, hm_protocol) and
+        # accepts no plugin_id keyword. The label is set on the instance AFTER
+        # construction for exactly this reason: passing it as a keyword would
+        # raise TypeError on every third-party plugin shaped like this one.
+        class _EP:
+            name = "strict-init-plugin"
+            def load(self):
+                return _FakeAgentProtocol
+        mock_iter.return_value = iter([_EP()])
+        agent = AgentProtocolFactory.create("strict-init-plugin")
+        self.assertEqual(agent.plugin_id, "strict-init-plugin")
+        self.assertIsNone(agent.bus)
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_the_network_factory_records_it_too(self, mock_iter):
+        class _EP:
+            name = "hivemind-websocket-protocol"
+            def load(self):
+                return _FakeNetworkProtocol
+        mock_iter.return_value = iter([_EP()])
+        net = NetworkProtocolFactory.create("hivemind-websocket-protocol")
+        self.assertEqual(net.plugin_id, "hivemind-websocket-protocol")
+
+    def test_a_plugin_built_directly_has_an_empty_id(self):
+        # The default is the empty string, NOT a class name: a caller that
+        # needs a label must handle the empty case rather than read a second
+        # spelling of the same thing.
+        from hivemind_plugin_manager.protocols import _SubProtocol
+        self.assertEqual(_SubProtocol().plugin_id, "")
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_a_slotted_plugin_does_not_raise(self, mock_iter):
+        class _Slotted:
+            __slots__ = ("config", "bus", "hm_protocol")
+            def __init__(self, config=None, bus=None, hm_protocol=None):
+                self.config, self.bus = config, bus
+                self.hm_protocol = hm_protocol
+
+        class _EP:
+            name = "slotted"
+            def load(self):
+                return _Slotted
+        mock_iter.return_value = iter([_EP()])
+        agent = AgentProtocolFactory.create("slotted")  # must not raise
+        self.assertFalse(hasattr(agent, "plugin_id"))
+
+
+class TestPluginIdIsKeywordOnly(unittest.TestCase):
+    """A positional call must bind exactly as it did before this field existed.
+
+    Found by reviewer-b on JarbasHiveMind/hivemind-plugin-manager#65. A subclass
+    that re-declares an inherited field keeps that field's inherited position, so
+    a plain ``plugin_id`` on ``_SubProtocol`` lands in the MIDDLE of the subclass
+    order: config, hm_protocol, callbacks, plugin_id, bus. A caller passing four
+    positional arguments then hands its bus to ``plugin_id``, ``bus`` is built
+    from the default factory, and the agent listens on a bus nobody else holds.
+    No exception is raised; the agent simply never answers.
+    """
+
+    def test_a_four_positional_call_still_binds_the_bus(self):
+        import dataclasses
+
+        from hivemind_plugin_manager.protocols import AgentProtocol
+
+        class _Agent(AgentProtocol):
+            def natural_language_query(self, utterance, lang):
+                yield None
+
+        marker = object()
+        from hivemind_plugin_manager.protocols import ClientCallbacks
+        agent = _Agent({}, None, ClientCallbacks(), marker)
+        self.assertIs(agent.bus, marker,
+                      "the fourth positional argument must still be bus")
+        self.assertEqual(agent.plugin_id, "")
+        self.assertTrue(
+            dataclasses.fields(AgentProtocol)[3].kw_only
+            or [f.name for f in dataclasses.fields(AgentProtocol)
+                if not f.kw_only][3] == "bus")
+
+    def test_the_positional_order_excludes_plugin_id(self):
+        import dataclasses
+
+        from hivemind_plugin_manager.protocols import (
+            AgentProtocol, BinaryDataHandlerProtocol)
+
+        for cls, expected_last in ((AgentProtocol, "bus"),
+                                   (BinaryDataHandlerProtocol,
+                                    "agent_protocol")):
+            positional = [f.name for f in dataclasses.fields(cls)
+                          if not f.kw_only]
+            self.assertNotIn("plugin_id", positional)
+            self.assertEqual(positional[-1], expected_last)
+
+
+class TestEveryFactoryRecordsTheName(unittest.TestCase):
+    """All FOUR factories, not the two that had cells.
+
+    reviewer-b measured the gap: with the label removed from the binary and
+    policy call sites only, the suite stayed green, so half the change could
+    revert unnoticed.
+    """
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_the_binary_factory_records_it(self, mock_iter):
+        class _FakeBinary:
+            def __init__(self, config=None, hm_protocol=None,
+                         agent_protocol=None):
+                self.config = config
+                self.hm_protocol = hm_protocol
+                self.agent_protocol = agent_protocol
+
+        class _EP:
+            name = "hivemind-audio-binary-protocol"
+            def load(self):
+                return _FakeBinary
+        mock_iter.return_value = iter([_EP()])
+        handler = BinaryDataHandlerProtocolFactory.create(
+            "hivemind-audio-binary-protocol")
+        self.assertEqual(handler.plugin_id, "hivemind-audio-binary-protocol")
+
+    @patch("hivemind_plugin_manager.entry_points")
+    def test_the_policy_factory_records_it(self, mock_iter):
+        from hivemind_plugin_manager import PolicyPluginFactory
+
+        class _FakePolicy:
+            def __init__(self, config=None, hm_protocol=None):
+                self.config = config
+                self.hm_protocol = hm_protocol
+
+        class _EP:
+            name = "hivemind-ovos-agent-policy"
+            def load(self):
+                return _FakePolicy
+        mock_iter.return_value = iter([_EP()])
+        policy = PolicyPluginFactory.create("hivemind-ovos-agent-policy")
+        self.assertEqual(policy.plugin_id, "hivemind-ovos-agent-policy")
+
+
 if __name__ == "__main__":
     unittest.main()

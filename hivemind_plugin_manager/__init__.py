@@ -63,6 +63,21 @@ class DatabaseFactory:
         return plugin(name=name, subfolder=subfolder, password=password)
 
 
+def _label(plugin, plugin_id: str):
+    """Record the entry-point name a plugin was loaded under, on the instance.
+
+    The name is set AFTER construction, not passed as a keyword: a third-party
+    plugin is free to define its own ``__init__``, and an unexpected keyword
+    argument would break it. A plugin built directly keeps the empty default,
+    so a caller that needs a label must handle an empty ``plugin_id``.
+    """
+    try:
+        plugin.plugin_id = plugin_id
+    except AttributeError:  # a plugin with __slots__ and no such slot
+        LOG.debug(f"cannot record plugin_id on {type(plugin).__name__}")
+    return plugin
+
+
 class AgentProtocolFactory:
     @classmethod
     def get_class(cls, plugin_name: str) -> Type[AgentProtocol]:
@@ -78,7 +93,8 @@ class AgentProtocolFactory:
                hm_protocol: Optional['HiveMindListenerProtocol'] = None) -> AgentProtocol:
         config = config or {}
         plugin = cls.get_class(plugin_name)
-        return plugin(config=config, bus=bus, hm_protocol=hm_protocol)
+        return _label(plugin(config=config, bus=bus,
+                             hm_protocol=hm_protocol), plugin_name)
 
 
 class NetworkProtocolFactory:
@@ -95,7 +111,8 @@ class NetworkProtocolFactory:
                hm_protocol: Optional['HiveMindListenerProtocol'] = None) -> NetworkProtocol:
         config = config or {}
         plugin = cls.get_class(plugin_name)
-        return plugin(config=config, hm_protocol=hm_protocol)
+        return _label(plugin(config=config, hm_protocol=hm_protocol),
+                      plugin_name)
 
 
 class BinaryDataHandlerProtocolFactory:
@@ -114,7 +131,8 @@ class BinaryDataHandlerProtocolFactory:
                agent_protocol: Optional['AgentProtocol'] = None) -> BinaryDataHandlerProtocol:
         config = config or {}
         plugin = cls.get_class(plugin_name)
-        return plugin(config=config, hm_protocol=hm_protocol, agent_protocol=agent_protocol)
+        return _label(plugin(config=config, hm_protocol=hm_protocol,
+                             agent_protocol=agent_protocol), plugin_name)
 
 
 class PolicyPluginFactory:
@@ -136,7 +154,8 @@ class PolicyPluginFactory:
                hm_protocol: Optional['HiveMindListenerProtocol'] = None) -> PolicyPlugin:
         config = config or {}
         plugin = cls.get_class(plugin_name)
-        return plugin(config=config, hm_protocol=hm_protocol)
+        return _label(plugin(config=config, hm_protocol=hm_protocol),
+                      plugin_name)
 
 
 def find_plugins(plug_type: HiveMindPluginTypes = None) -> dict:
