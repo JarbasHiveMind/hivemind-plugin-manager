@@ -37,6 +37,20 @@ class _SubProtocol:
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
     hm_protocol: Optional['HiveMindListenerProtocol'] = None
     callbacks: ClientCallbacks = dataclasses.field(default_factory=ClientCallbacks)
+    # The entry-point name this plugin was loaded under, set by the factory
+    # that loaded it (see the ``*Factory.create`` classmethods). A plugin built
+    # directly, as tests do, leaves it empty: a caller that needs a label must
+    # handle the empty string rather than assume the attribute names a plugin.
+    #
+    # ``kw_only`` is REQUIRED, not a style choice. A subclass that re-declares
+    # an inherited field keeps that field's inherited position, so a plain
+    # field added here lands in the MIDDLE of the subclass order --
+    # ``AgentProtocol`` becomes config, hm_protocol, callbacks, plugin_id, bus.
+    # A caller passing four positional arguments would then hand its bus to
+    # ``plugin_id`` and get a default bus nobody else holds, with no exception:
+    # the agent would listen on a bus of its own and simply never answer.
+    # Keyword-only keeps every positional signature exactly as it was.
+    plugin_id: str = dataclasses.field(default="", kw_only=True)
 
     @property
     def identity(self) -> NodeIdentity:
