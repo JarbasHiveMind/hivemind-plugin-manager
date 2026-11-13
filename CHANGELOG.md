@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.11.0a1) (2026-11-13)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.10.0a1...0.11.0a1)
+
+**Merged pull requests:**
+
+- feat: record the entry-point name a plugin was loaded under [\#65](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/65) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.10.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.10.0a1) (2026-09-18)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.9.0a8...0.10.0a1)
