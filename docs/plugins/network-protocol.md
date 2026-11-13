@@ -41,6 +41,19 @@ available via `hm_protocol`. It additionally exposes `.agent_protocol` as a shor
 (typically `hivemind-core`) calls `run()` in a thread or process. When `run()` returns, the
 server is considered stopped.
 
+## The `stop()` Method
+
+`stop()` asks `run()` to return. It is not abstract: the default does nothing, so a
+binding written before it existed still loads. A binding that overrides it must make
+`stop()` idempotent, callable from any thread, and safe before `run()` (`run()` then
+returns at once). After `stop()` the binding admits no new peer and calls
+`hm_protocol.handle_client_disconnected` for every admitted peer: that is the disconnect
+signal HIVEMIND-TRANSPORT-1 §2 owes the node for each peer that leaves.
+
+`hivemind-core` calls `stop()` on every binding when the node shuts down and waits a
+bounded time for `run()` to return. A binding that keeps the default is logged and left;
+the node still ends.
+
 ---
 
 ## Constructor Signature

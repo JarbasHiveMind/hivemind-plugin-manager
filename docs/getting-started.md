@@ -4,12 +4,12 @@
 
 HiveMind Plugin Manager (HPM) is the extension layer that lets the HiveMind ecosystem swap its
 storage backend, agent integration, network transport, and binary data handling without changing
-core code. Every implementation — whether a JSON file database, a WebSocket server, or an audio
-handler — is a separate installable Python package that registers itself under a standardised
+core code. Every implementation - whether a JSON file database, a WebSocket server, or an audio
+handler - is a separate installable Python package that registers itself under a standardised
 setuptools entry-point group. HPM discovers those entry points at runtime and exposes factory
 classes so callers never need to hard-code import paths.
 
-There are exactly four plugin types:
+There are exactly five plugin types:
 
 | Type | Entry-point group | What it does |
 |---|---|---|
@@ -17,6 +17,7 @@ There are exactly four plugin types:
 | `AGENT_PROTOCOL` | `hivemind.agent.protocol` | Bridges HiveMind messages to an AI backend |
 | `NETWORK_PROTOCOL` | `hivemind.network.protocol` | Transports `HiveMessage` objects over a wire |
 | `BINARY_PROTOCOL` | `hivemind.binary.protocol` | Handles raw binary payloads (audio, images, files) |
+| `POLICY` | `hivemind.policy` | Admission-control: allow, deny, or mutate messages before they reach the bus |
 
 Source: `hivemind_plugin_manager/__init__.py:10`
 
@@ -119,7 +120,7 @@ from hivemind_plugin_manager import DatabaseFactory
 db = DatabaseFactory.create("my-inmemory-db-plugin", name="clients", subfolder="hivemind-core")
 ```
 
-`DatabaseFactory.create` — `hivemind_plugin_manager/__init__.py:26`
+`DatabaseFactory.create` - `hivemind_plugin_manager/__init__.py:26`
 
 ---
 
@@ -136,3 +137,6 @@ hpm show-config            # dump full server.json
 
 Config is stored in `~/.config/hivemind-core/server.json` (XDG).
 See `hivemind_plugin_manager/tui.py` for full CLI implementation.
+
+---
+[Home](README.md) · [Concepts →](concepts.md)

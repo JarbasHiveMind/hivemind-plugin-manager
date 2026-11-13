@@ -114,3 +114,6 @@ If a future HiveMind version requires a fifth plugin type:
 3. Add a new factory class following the pattern of `DatabaseFactory` (`__init__.py:17`).
 4. Add tests in a new `tests/test_<type>.py` file.
 5. Update `docs/README.md`, `docs/concepts.md`, and add a new `docs/plugins/<type>.md`.
+
+---
+[← Advanced](advanced.md) · [Home](README.md)

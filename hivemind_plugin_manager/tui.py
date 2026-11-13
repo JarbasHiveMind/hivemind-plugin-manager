@@ -5,6 +5,7 @@ from typing import List
 import click
 from hivemind_plugin_manager import find_plugins, HiveMindPluginTypes
 from json_database import JsonStorageXDG
+from json_database.utils import load_commented_json
 from ovos_utils.xdg_utils import xdg_config_home, xdg_data_home
 
 _DEFAULT = {
@@ -51,23 +52,38 @@ def cast_to_enum(plugin_type: str) -> HiveMindPluginTypes:
     return plugin_type
 
 
+class ServerConfigError(click.ClickException):
+    """server.json exists but cannot be used; it is never overwritten."""
+
+
 def get_server_config() -> JsonStorageXDG:
     """from ~/.config/hivemind-core/server.json """
+    path = os.path.join(xdg_config_home(), "hivemind-core", "server.json")
+    parsed = None
+    if os.path.isfile(path):
+        # the storage object comes up empty on a parse error, and storing it
+        # would erase the file, so the file is parsed first and the storage
+        # is filled from that parse
+        try:
+            parsed = load_commented_json(path)
+        except (OSError, ValueError) as e:
+            raise ServerConfigError(f"cannot parse {path}: {e}") from e
+        if not isinstance(parsed, dict):
+            raise ServerConfigError(f"{path} is not a JSON object")
     db = JsonStorageXDG("server",
                         xdg_folder=xdg_config_home(),
                         subfolder="hivemind-core")
-    # create file if it doesnt exist
-    if not os.path.isfile(db.path):
+    if parsed is None:
+        # create file if it doesnt exist
         db.merge(_DEFAULT)
         db.store()
+    else:
+        db.clear()
+        db.update(parsed)
     # ensure no missing top level values
     for k in [_ for _ in _DEFAULT if _ not in db]:
         db[k] = _DEFAULT[k]
     return db
-
-
-# Initialize the configuration
-config = get_server_config()
 
 
 def list_plugins(plugin_type: str) -> List[str]:
@@ -109,6 +125,7 @@ def set_plugin(plugin_type, plugin_name):
         click.echo(f"Plugin '{plugin_name}' not available for '{plugin_type}'.", err=True)
         return
 
+    config = get_server_config()
     config[mapping[plugin_type]]["module"] = plugin_name
     config.store()
     click.echo(f"Set {plugin_type} to {plugin_name}.")
@@ -122,6 +139,7 @@ def get_plugin(plugin_type):
         click.echo(f"Invalid plugin type: {plugin_type}", err=True)
         return
     plugin_type = cast_to_enum(plugin_type)
+    config = get_server_config()
     key = mapping[plugin_type]
     if key in config and "module" in config[key]:
         click.echo(config[plugin_type]["module"])
@@ -132,6 +150,7 @@ def get_plugin(plugin_type):
 @cli.command("show-config")
 def show_config():
     """Show the full configuration."""
+    config = get_server_config()
     click.echo(json.dumps(config, indent=2, ensure_ascii=False, sort_keys=True))
 
 
