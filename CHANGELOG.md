@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.11.1a1) (2026-11-13)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.11.0a1...0.11.1a1)
+
+**Merged pull requests:**
+
+- fix: never overwrite an unparseable server.json [\#67](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/67) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.11.0a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.11.0a1) (2026-11-13)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.10.0a1...0.11.0a1)
