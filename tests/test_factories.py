@@ -253,7 +253,7 @@ class TestPluginIdIsRecorded(unittest.TestCase):
 class TestPluginIdIsKeywordOnly(unittest.TestCase):
     """A positional call must bind exactly as it did before this field existed.
 
-    Found by reviewer-b on JarbasHiveMind/hivemind-plugin-manager#65. A subclass
+    A subclass
     that re-declares an inherited field keeps that field's inherited position, so
     a plain ``plugin_id`` on ``_SubProtocol`` lands in the MIDDLE of the subclass
     order: config, hm_protocol, callbacks, plugin_id, bus. A caller passing four
@@ -300,9 +300,8 @@ class TestPluginIdIsKeywordOnly(unittest.TestCase):
 class TestEveryFactoryRecordsTheName(unittest.TestCase):
     """All FOUR factories, not the two that had cells.
 
-    reviewer-b measured the gap: with the label removed from the binary and
-    policy call sites only, the suite stayed green, so half the change could
-    revert unnoticed.
+    Each factory is covered, so removing the label from any one of them turns
+    the suite red.
     """
 
     @patch("hivemind_plugin_manager.entry_points")
