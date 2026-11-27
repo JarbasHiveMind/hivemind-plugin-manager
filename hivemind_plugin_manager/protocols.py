@@ -55,7 +55,7 @@ class _SubProtocol:
     @property
     def identity(self) -> NodeIdentity:
         if not self.hm_protocol:
-            return NodeIdentity()
+            return NodeIdentity(app_name="hivemind-core")
         return self.hm_protocol.identity
 
     @property

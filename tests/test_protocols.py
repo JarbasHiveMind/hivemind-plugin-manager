@@ -203,3 +203,13 @@ class TestBinaryDataHandlerProtocol(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_identity_fallback_has_key_on_fresh_install(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    identity = _ConcreteAgent().identity
+    identity.create_keys()
+    assert isinstance(identity.public_key, str)
+    assert "PUBLIC KEY" in identity.public_key
+    assert identity.IDENTITY_FILE.path.startswith(str(tmp_path / "config" / "hivemind" / "hivemind-core"))
