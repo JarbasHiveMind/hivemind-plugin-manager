@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.2a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.11.2a1) (2026-11-27)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.11.1a1...0.11.2a1)
+
+**Merged pull requests:**
+
+- fix: give the fallback identity the app name hivemind-core [\#71](https://github.com/JarbasHiveMind/hivemind-plugin-manager/pull/71) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.11.1a1](https://github.com/JarbasHiveMind/hivemind-plugin-manager/tree/0.11.1a1) (2026-11-13)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-plugin-manager/compare/0.11.0a1...0.11.1a1)
