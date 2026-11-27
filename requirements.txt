@@ -1,4 +1,0 @@
-hivemind_bus_client
-json_database
-ovos-bus-client
-ovos-utils
