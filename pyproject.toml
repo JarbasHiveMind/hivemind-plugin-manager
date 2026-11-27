@@ -10,7 +10,13 @@ authors = [{ name = "jarbasAI", email = "jarbasai@mailfence.com" }]
 license = "Apache-2.0"
 requires-python = ">=3.10"
 keywords = ["hivemind", "plugins", "plugin-manager"]
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
+dependencies = [
+    "hivemind_bus_client>=1.2.1a1",
+    "json_database>=0.10.2a1",
+    "ovos-bus-client",
+    "ovos-utils",
+]
 
 [project.urls]
 Homepage = "https://github.com/JarbasHiveMind/hivemind-plugin-manager"
@@ -45,4 +51,3 @@ include-package-data = true
 
 [tool.setuptools.dynamic]
 version = { attr = "hivemind_plugin_manager.version.__version__" }
-dependencies = { file = ["requirements.txt"] }
